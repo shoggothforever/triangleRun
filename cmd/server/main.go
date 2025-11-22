@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -109,10 +110,25 @@ func loadConfig() error {
 	// 设置默认值
 	viper.SetDefault("server.port", "8080")
 	viper.SetDefault("log.level", "info")
+	viper.SetDefault("database.host", "localhost")
+	viper.SetDefault("database.port", 5432)
+	viper.SetDefault("database.user", "trpg")
+	viper.SetDefault("database.password", "trpg_password")
+	viper.SetDefault("database.dbname", "trpg_solo_engine")
+	viper.SetDefault("database.sslmode", "disable")
+	viper.SetDefault("redis.host", "localhost")
+	viper.SetDefault("redis.port", 6379)
+
+	// 启用环境变量支持
+	viper.AutomaticEnv()
+	// 设置环境变量前缀（可选）
+	// viper.SetEnvPrefix("TRPG")
+	// 替换环境变量中的点号为下划线
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// 配置文件不存在，使用默认值
+			// 配置文件不存在，使用默认值和环境变量
 			return nil
 		}
 		return err

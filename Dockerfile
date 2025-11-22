@@ -1,5 +1,5 @@
 # 构建阶段
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -26,6 +26,7 @@ WORKDIR /root/
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/trpg-engine .
 COPY --from=builder /app/configs ./configs
+COPY --from=builder /app/scenarios ./scenarios
 
 # 暴露端口
 EXPOSE 8080

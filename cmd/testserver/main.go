@@ -38,7 +38,7 @@ func main() {
 	})
 
 	// 初始化处理器
-	diceHandler := handler.NewDiceHandler(diceService)
+	diceHandler := handler.NewDiceHandler(diceService, agentService)
 	agentHandler := handler.NewAgentHandler(agentService)
 
 	// API路由

@@ -1,31 +1,224 @@
+# 三角机构TRPG单人引擎 - 应用配置
+# 配置文件版本: 1.0
+
+# 服务器配置
 server:
   port: "8080"
-  mode: "debug"  # debug, release
+  mode: "debug"  # debug, release, test
+  read_timeout: 30  # 读取超时（秒）
+  write_timeout: 30  # 写入超时（秒）
+  idle_timeout: 120  # 空闲超时（秒）
+  max_header_bytes: 1048576  # 最大请求头大小（1MB）
+  shutdown_timeout: 5  # 优雅关闭超时（秒）
 
+# 日志配置
 log:
-  level: "info"  # debug, info, warn, error
+  level: "info"  # debug, info, warn, error, fatal
+  format: "json"  # json, console
+  output: "stdout"  # stdout, stderr, file
+  file_path: "logs/app.log"  # 日志文件路径（当output为file时）
+  max_size: 100  # 日志文件最大大小（MB）
+  max_backups: 3  # 保留的旧日志文件数量
+  max_age: 28  # 保留日志文件的最大天数
+  compress: true  # 是否压缩旧日志文件
+  enable_caller: true  # 是否记录调用者信息
+  enable_stacktrace: false  # 是否记录堆栈跟踪（仅error及以上级别）
 
+# 数据库配置
 database:
   host: "localhost"
   port: 5432
   user: "trpg"
   password: "trpg_password"
   dbname: "trpg_solo_engine"
-  sslmode: "disable"
-  max_open_conns: 25
-  max_idle_conns: 5
-  conn_max_lifetime: 300  # seconds
+  sslmode: "disable"  # disable, require, verify-ca, verify-full
+  timezone: "Asia/Shanghai"
+  max_open_conns: 25  # 最大打开连接数
+  max_idle_conns: 5  # 最大空闲连接数
+  conn_max_lifetime: 300  # 连接最大生命周期（秒）
+  conn_max_idle_time: 60  # 连接最大空闲时间（秒）
+  log_level: "warn"  # silent, error, warn, info
+  slow_threshold: 200  # 慢查询阈值（毫秒）
+  auto_migrate: true  # 是否自动运行数据库迁移
 
+# Redis缓存配置
 redis:
   host: "localhost"
   port: 6379
   password: ""
   db: 0
-  pool_size: 10
+  pool_size: 10  # 连接池大小
+  min_idle_conns: 2  # 最小空闲连接数
+  max_retries: 3  # 最大重试次数
+  dial_timeout: 5  # 连接超时（秒）
+  read_timeout: 3  # 读取超时（秒）
+  write_timeout: 3  # 写入超时（秒）
+  pool_timeout: 4  # 连接池超时（秒）
+  idle_timeout: 300  # 空闲连接超时（秒）
+  # 缓存TTL配置（秒）
+  cache_ttl:
+    session: 86400  # 会话缓存24小时
+    agent: 3600  # 角色缓存1小时
+    scenario: 3600  # 剧本缓存1小时
+    scene: 3600  # 场景缓存1小时
 
+# AI服务配置
 ai:
-  provider: "openai"  # openai, local
-  api_key: ""
-  model: "gpt-4"
-  base_url: ""
-  timeout: 30  # seconds
+  provider: "openai"  # openai, local, azure
+  api_key: ""  # API密钥（从环境变量AI_API_KEY读取）
+  model: "gpt-4"  # 使用的模型
+  base_url: ""  # 自定义API端点（可选）
+  timeout: 30  # 请求超时（秒）
+  max_tokens: 2000  # 最大生成token数
+  temperature: 0.7  # 温度参数（0-2）
+  top_p: 1.0  # Top-p采样参数
+  frequency_penalty: 0.0  # 频率惩罚（-2.0到2.0）
+  presence_penalty: 0.0  # 存在惩罚（-2.0到2.0）
+  retry_attempts: 3  # 重试次数
+  retry_delay: 1  # 重试延迟（秒）
+  # AI生成内容的缓存配置
+  enable_cache: true  # 是否启用AI响应缓存
+  cache_ttl: 3600  # AI响应缓存时间（秒）
+
+# 认证配置
+auth:
+  jwt_secret: "your-secret-key-change-in-production"  # JWT密钥（从环境变量JWT_SECRET读取）
+  jwt_expiration: 86400  # JWT过期时间（秒，24小时）
+  jwt_refresh_expiration: 604800  # 刷新token过期时间（秒，7天）
+  enable_auth: false  # 是否启用认证（开发环境可关闭）
+  token_header: "Authorization"  # Token请求头名称
+  token_prefix: "Bearer"  # Token前缀
+
+# 速率限制配置
+rate_limit:
+  enabled: true  # 是否启用速率限制
+  # 全局默认限制
+  global:
+    max_requests: 1000  # 每个时间窗口的最大请求数
+    window: 60  # 时间窗口（秒）
+    by_ip: true  # 是否基于IP限流
+    by_user: false  # 是否基于用户限流
+  # 端点特定限制
+  endpoints:
+    # 骰子掷骰 - 每分钟100次
+    "/api/dice/*":
+      max_requests: 100
+      window: 60
+      by_user: true
+    # AI生成 - 每分钟10次
+    "/api/ai/*":
+      max_requests: 10
+      window: 60
+      by_user: true
+    # 存档操作 - 每分钟20次
+    "/api/saves/*":
+      max_requests: 20
+      window: 60
+      by_user: true
+    # 会话操作 - 每分钟30次
+    "/api/sessions/*":
+      max_requests: 30
+      window: 60
+      by_user: true
+    # 角色操作 - 每分钟20次
+    "/api/agents/*":
+      max_requests: 20
+      window: 60
+      by_user: true
+    # 剧本查询 - 每分钟50次
+    "/api/scenarios/*":
+      max_requests: 50
+      window: 60
+      by_ip: true
+
+# 游戏配置
+game:
+  # 剧本配置
+  scenarios_path: "scenarios"  # 剧本文件目录
+  # ARC配置
+  arc_configs_path: "configs"  # ARC配置文件目录
+  # 游戏规则配置
+  rules:
+    dice_count: 6  # 骰子数量
+    dice_sides: 4  # 骰子面数
+    success_value: 3  # 成功值
+    triple_ascension_count: 3  # 三重升华所需的3的数量
+    initial_qa_points: 9  # 初始资质保证点数
+    relationship_count: 3  # 人际关系数量
+    relationship_total_connection: 12  # 人际关系总连结点数
+    commendations_for_capture: 3  # 捕获异常体的嘉奖数
+    reprimands_for_escape: 3  # 异常体逃脱的申诫数
+    death_commendation_cost: 5  # 死亡扣除的嘉奖数
+  # 会话配置
+  session:
+    max_active_sessions: 10  # 每个用户最大活跃会话数
+    session_timeout: 86400  # 会话超时时间（秒，24小时）
+    auto_save_interval: 300  # 自动保存间隔（秒，5分钟）
+
+# 性能配置
+performance:
+  # 响应时间目标（毫秒）
+  targets:
+    api_response: 200  # API响应时间（p95）
+    dice_roll: 10  # 骰子掷骰
+    scene_load: 100  # 场景加载
+    ai_generation: 2000  # AI生成
+    save_operation: 500  # 存档保存
+  # 并发配置
+  concurrency:
+    max_goroutines: 1000  # 最大goroutine数量
+    worker_pool_size: 10  # 工作池大小
+  # 缓存配置
+  cache:
+    enable_memory_cache: true  # 是否启用内存缓存
+    memory_cache_size: 100  # 内存缓存大小（MB）
+
+# CORS配置
+cors:
+  enabled: true  # 是否启用CORS
+  allow_origins:
+    - "http://localhost:3000"
+    - "http://localhost:5173"
+  allow_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allow_headers:
+    - "Origin"
+    - "Content-Type"
+    - "Authorization"
+    - "X-Requested-With"
+  expose_headers:
+    - "Content-Length"
+    - "X-RateLimit-Limit"
+    - "X-RateLimit-Remaining"
+    - "X-RateLimit-Reset"
+  allow_credentials: true
+  max_age: 86400  # 预检请求缓存时间（秒）
+
+# 监控配置
+monitoring:
+  enabled: true  # 是否启用监控
+  metrics_path: "/metrics"  # Prometheus指标端点
+  health_path: "/health"  # 健康检查端点
+  # Prometheus配置
+  prometheus:
+    enabled: true
+    namespace: "trpg"
+    subsystem: "solo_engine"
+  # 追踪配置
+  tracing:
+    enabled: false
+    jaeger_endpoint: ""
+    sample_rate: 0.1
+
+# 开发配置
+development:
+  enable_pprof: false  # 是否启用pprof性能分析
+  pprof_port: "6060"  # pprof端口
+  enable_swagger: true  # 是否启用Swagger文档
+  swagger_path: "/swagger"  # Swagger文档路径
+  mock_ai: false  # 是否使用模拟AI（用于测试）
+  seed_data: false  # 是否加载种子数据
