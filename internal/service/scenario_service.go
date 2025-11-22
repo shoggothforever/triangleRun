@@ -408,10 +408,18 @@ func CreateTestScenario() *domain.Scenario {
 				NPCs: []*domain.NPC{
 					{
 						ID:          "npc-1",
-						Name:        "守卫",
-						Description: "年迈的守卫",
-						Personality: "谨慎",
+						Name:        "工厂工人",
+						Description: "一个疲惫的工厂工人",
+						Personality: "友好但紧张",
 						Dialogues:   []string{"这里很危险", "小心点"},
+						State:       "normal",
+					},
+					{
+						ID:          "npc-2",
+						Name:        "保安",
+						Description: "警惕的保安",
+						Personality: "严肃",
+						Dialogues:   []string{"请出示证件", "这里禁止进入"},
 						State:       "normal",
 					},
 				},

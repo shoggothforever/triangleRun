@@ -590,3 +590,399 @@ func TestGameService_PhaseTransitionValidation(t *testing.T) {
 		})
 	}
 }
+
+// TestGameFlow_CompleteSequence 测试完整的游戏流程序列
+func TestGameFlow_CompleteSequence(t *testing.T) {
+	service := NewGameService()
+
+	// 创建会话
+	session, err := service.CreateSession("agent-1", "scenario-1")
+	if err != nil {
+		t.Fatalf("创建会话失败: %v", err)
+	}
+
+	// 验证初始阶段为晨会
+	if session.Phase != domain.PhaseMorning {
+		t.Errorf("期望初始阶段为晨会，得到 %s", session.Phase)
+	}
+
+	// 1. 晨会阶段
+	morningResult, err := service.StartMorningPhase(session.ID)
+	if err != nil {
+		t.Fatalf("开始晨会阶段失败: %v", err)
+	}
+
+	if morningResult.Briefing == nil {
+		t.Error("期望晨会阶段返回简报")
+	}
+
+	if len(morningResult.Goals) == 0 {
+		t.Error("期望晨会阶段返回可选目标")
+	}
+
+	// 转换到调查阶段
+	err = service.TransitionPhase(session.ID, domain.PhaseInvestigation)
+	if err != nil {
+		t.Fatalf("转换到调查阶段失败: %v", err)
+	}
+
+	// 2. 调查阶段
+	investigationResult, err := service.StartInvestigationPhase(session.ID)
+	if err != nil {
+		t.Fatalf("开始调查阶段失败: %v", err)
+	}
+
+	if investigationResult.SessionID != session.ID {
+		t.Errorf("期望SessionID为 %s，得到 %s", session.ID, investigationResult.SessionID)
+	}
+
+	// 转换到遭遇阶段
+	err = service.TransitionPhase(session.ID, domain.PhaseEncounter)
+	if err != nil {
+		t.Fatalf("转换到遭遇阶段失败: %v", err)
+	}
+
+	// 3. 遭遇阶段
+	encounterResult, err := service.StartEncounterPhase(session.ID)
+	if err != nil {
+		t.Fatalf("开始遭遇阶段失败: %v", err)
+	}
+
+	if encounterResult.AnomalyName == "" {
+		t.Error("期望遭遇阶段返回异常体名称")
+	}
+
+	// 转换到余波阶段
+	err = service.TransitionPhase(session.ID, domain.PhaseAftermath)
+	if err != nil {
+		t.Fatalf("转换到余波阶段失败: %v", err)
+	}
+
+	// 验证最终阶段
+	finalSession, err := service.GetSession(session.ID)
+	if err != nil {
+		t.Fatalf("获取最终会话失败: %v", err)
+	}
+
+	if finalSession.Phase != domain.PhaseAftermath {
+		t.Errorf("期望最终阶段为余波，得到 %s", finalSession.Phase)
+	}
+}
+
+// TestGameFlow_MorningPhaseDetails 测试晨会阶段的详细功能
+func TestGameFlow_MorningPhaseDetails(t *testing.T) {
+	service := NewGameService()
+
+	// 创建会话
+	session, err := service.CreateSession("agent-1", "scenario-1")
+	if err != nil {
+		t.Fatalf("创建会话失败: %v", err)
+	}
+
+	// 开始晨会阶段
+	result, err := service.StartMorningPhase(session.ID)
+	if err != nil {
+		t.Fatalf("开始晨会阶段失败: %v", err)
+	}
+
+	// 验证简报内容
+	if result.Briefing == nil {
+		t.Fatal("期望简报不为nil")
+	}
+
+	if result.Briefing.Summary == "" {
+		t.Error("期望简报包含摘要")
+	}
+
+	if len(result.Briefing.Objectives) == 0 {
+		t.Error("期望简报包含目标")
+	}
+
+	if len(result.Briefing.Warnings) == 0 {
+		t.Error("期望简报包含警告")
+	}
+
+	// 验证可选目标
+	if len(result.Goals) == 0 {
+		t.Error("期望至少有一个可选目标")
+	}
+
+	for _, goal := range result.Goals {
+		if goal.ID == "" {
+			t.Error("期望可选目标有ID")
+		}
+		if goal.Description == "" {
+			t.Error("期望可选目标有描述")
+		}
+		if goal.Reward <= 0 {
+			t.Error("期望可选目标有正数奖励")
+		}
+	}
+
+	// 验证描述
+	if result.Description == "" {
+		t.Error("期望晨会阶段有描述")
+	}
+}
+
+// TestGameFlow_InvestigationPhaseTracking 测试调查阶段的状态追踪
+func TestGameFlow_InvestigationPhaseTracking(t *testing.T) {
+	service := NewGameService()
+
+	// 创建会话并转换到调查阶段
+	session, err := service.CreateSession("agent-1", "scenario-1")
+	if err != nil {
+		t.Fatalf("创建会话失败: %v", err)
+	}
+
+	err = service.TransitionPhase(session.ID, domain.PhaseInvestigation)
+	if err != nil {
+		t.Fatalf("转换到调查阶段失败: %v", err)
+	}
+
+	// 模拟调查过程中的状态变化
+	err = service.UpdateState(session.ID, func(state *domain.GameState) error {
+		// 添加线索
+		state.CollectedClues = append(state.CollectedClues, "线索1", "线索2", "线索3")
+
+		// 解锁地点
+		state.UnlockedLocations = append(state.UnlockedLocations, "地点A", "地点B")
+
+		// 增加散逸端
+		state.LooseEnds = 5
+
+		// 设置当前场景
+		state.CurrentSceneID = "scene-1"
+
+		// 标记访问过的场景
+		state.VisitedScenes["scene-1"] = true
+		state.VisitedScenes["scene-2"] = true
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("更新状态失败: %v", err)
+	}
+
+	// 验证状态追踪
+	state, err := service.GetState(session.ID)
+	if err != nil {
+		t.Fatalf("获取状态失败: %v", err)
+	}
+
+	if len(state.CollectedClues) != 3 {
+		t.Errorf("期望收集3个线索，得到 %d", len(state.CollectedClues))
+	}
+
+	if len(state.UnlockedLocations) != 2 {
+		t.Errorf("期望解锁2个地点，得到 %d", len(state.UnlockedLocations))
+	}
+
+	if state.LooseEnds != 5 {
+		t.Errorf("期望5个散逸端，得到 %d", state.LooseEnds)
+	}
+
+	if state.CurrentSceneID != "scene-1" {
+		t.Errorf("期望当前场景为scene-1，得到 %s", state.CurrentSceneID)
+	}
+
+	if len(state.VisitedScenes) != 2 {
+		t.Errorf("期望访问2个场景，得到 %d", len(state.VisitedScenes))
+	}
+
+	// 开始调查阶段并验证结果
+	result, err := service.StartInvestigationPhase(session.ID)
+	if err != nil {
+		t.Fatalf("开始调查阶段失败: %v", err)
+	}
+
+	if result.CurrentSceneID != "scene-1" {
+		t.Errorf("期望当前场景为scene-1，得到 %s", result.CurrentSceneID)
+	}
+
+	if len(result.AvailableScenes) != 2 {
+		t.Errorf("期望2个可用场景，得到 %d", len(result.AvailableScenes))
+	}
+}
+
+// TestGameFlow_EncounterPhaseActivation 测试遭遇阶段的激活
+func TestGameFlow_EncounterPhaseActivation(t *testing.T) {
+	service := NewGameService()
+
+	// 创建会话并转换到遭遇阶段
+	session, err := service.CreateSession("agent-1", "scenario-1")
+	if err != nil {
+		t.Fatalf("创建会话失败: %v", err)
+	}
+
+	err = service.TransitionPhase(session.ID, domain.PhaseInvestigation)
+	if err != nil {
+		t.Fatalf("转换到调查阶段失败: %v", err)
+	}
+
+	// 模拟进入异常体领域
+	err = service.UpdateState(session.ID, func(state *domain.GameState) error {
+		state.DomainUnlocked = true
+		state.CurrentSceneID = "domain-scene"
+		state.ChaosPool = 10 // 初始化混沌池
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("更新状态失败: %v", err)
+	}
+
+	err = service.TransitionPhase(session.ID, domain.PhaseEncounter)
+	if err != nil {
+		t.Fatalf("转换到遭遇阶段失败: %v", err)
+	}
+
+	// 开始遭遇阶段
+	result, err := service.StartEncounterPhase(session.ID)
+	if err != nil {
+		t.Fatalf("开始遭遇阶段失败: %v", err)
+	}
+
+	// 验证遭遇阶段结果
+	if result.AnomalyName == "" {
+		t.Error("期望遭遇阶段返回异常体名称")
+	}
+
+	if result.Description == "" {
+		t.Error("期望遭遇阶段返回描述")
+	}
+
+	// 验证混沌池已初始化
+	state, err := service.GetState(session.ID)
+	if err != nil {
+		t.Fatalf("获取状态失败: %v", err)
+	}
+
+	if state.ChaosPool != 10 {
+		t.Errorf("期望混沌池为10，得到 %d", state.ChaosPool)
+	}
+
+	if !state.DomainUnlocked {
+		t.Error("期望领域已解锁")
+	}
+}
+
+// TestGameFlow_PhaseTransitionSequence 测试阶段转换序列的正确性
+func TestGameFlow_PhaseTransitionSequence(t *testing.T) {
+	service := NewGameService()
+
+	// 创建会话
+	session, err := service.CreateSession("agent-1", "scenario-1")
+	if err != nil {
+		t.Fatalf("创建会话失败: %v", err)
+	}
+
+	// 定义正确的阶段序列
+	phaseSequence := []domain.GamePhase{
+		domain.PhaseMorning,
+		domain.PhaseInvestigation,
+		domain.PhaseEncounter,
+		domain.PhaseAftermath,
+	}
+
+	// 验证初始阶段
+	currentSession, err := service.GetSession(session.ID)
+	if err != nil {
+		t.Fatalf("获取会话失败: %v", err)
+	}
+
+	if currentSession.Phase != phaseSequence[0] {
+		t.Errorf("期望初始阶段为 %s，得到 %s", phaseSequence[0], currentSession.Phase)
+	}
+
+	// 按序列转换阶段
+	for i := 1; i < len(phaseSequence); i++ {
+		err = service.TransitionPhase(session.ID, phaseSequence[i])
+		if err != nil {
+			t.Fatalf("转换到阶段 %s 失败: %v", phaseSequence[i], err)
+		}
+
+		// 验证转换成功
+		currentSession, err = service.GetSession(session.ID)
+		if err != nil {
+			t.Fatalf("获取会话失败: %v", err)
+		}
+
+		if currentSession.Phase != phaseSequence[i] {
+			t.Errorf("期望阶段为 %s，得到 %s", phaseSequence[i], currentSession.Phase)
+		}
+	}
+
+	// 验证可以从余波回到晨会（开始新任务）
+	err = service.TransitionPhase(session.ID, domain.PhaseMorning)
+	if err != nil {
+		t.Fatalf("从余波转换到晨会失败: %v", err)
+	}
+
+	currentSession, err = service.GetSession(session.ID)
+	if err != nil {
+		t.Fatalf("获取会话失败: %v", err)
+	}
+
+	if currentSession.Phase != domain.PhaseMorning {
+		t.Errorf("期望阶段为晨会，得到 %s", currentSession.Phase)
+	}
+}
+
+// TestGameFlow_InvalidPhaseOperations 测试在错误阶段执行操作
+func TestGameFlow_InvalidPhaseOperations(t *testing.T) {
+	service := NewGameService()
+
+	// 创建会话
+	session, err := service.CreateSession("agent-1", "scenario-1")
+	if err != nil {
+		t.Fatalf("创建会话失败: %v", err)
+	}
+
+	// 测试在晨会阶段调用调查阶段方法
+	_, err = service.StartInvestigationPhase(session.ID)
+	if err == nil {
+		t.Error("期望在晨会阶段调用调查阶段方法导致错误")
+	}
+
+	// 测试在晨会阶段调用遭遇阶段方法
+	_, err = service.StartEncounterPhase(session.ID)
+	if err == nil {
+		t.Error("期望在晨会阶段调用遭遇阶段方法导致错误")
+	}
+
+	// 转换到调查阶段
+	err = service.TransitionPhase(session.ID, domain.PhaseInvestigation)
+	if err != nil {
+		t.Fatalf("转换到调查阶段失败: %v", err)
+	}
+
+	// 测试在调查阶段调用晨会阶段方法
+	_, err = service.StartMorningPhase(session.ID)
+	if err == nil {
+		t.Error("期望在调查阶段调用晨会阶段方法导致错误")
+	}
+
+	// 测试在调查阶段调用遭遇阶段方法
+	_, err = service.StartEncounterPhase(session.ID)
+	if err == nil {
+		t.Error("期望在调查阶段调用遭遇阶段方法导致错误")
+	}
+
+	// 转换到遭遇阶段
+	err = service.TransitionPhase(session.ID, domain.PhaseEncounter)
+	if err != nil {
+		t.Fatalf("转换到遭遇阶段失败: %v", err)
+	}
+
+	// 测试在遭遇阶段调用晨会阶段方法
+	_, err = service.StartMorningPhase(session.ID)
+	if err == nil {
+		t.Error("期望在遭遇阶段调用晨会阶段方法导致错误")
+	}
+
+	// 测试在遭遇阶段调用调查阶段方法
+	_, err = service.StartInvestigationPhase(session.ID)
+	if err == nil {
+		t.Error("期望在遭遇阶段调用调查阶段方法导致错误")
+	}
+}

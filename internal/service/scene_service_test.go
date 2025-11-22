@@ -13,24 +13,24 @@ import (
 
 func setupSceneTest(t *testing.T) (ScenarioService, GameService, SceneService, *domain.GameSession) {
 	tempDir := t.TempDir()
-	
+
 	// 创建测试剧本并保存到文件
 	testScenario := CreateTestScenario()
 	data, err := json.MarshalIndent(testScenario, "", "  ")
 	require.NoError(t, err)
-	
+
 	scenarioPath := filepath.Join(tempDir, testScenario.ID+".json")
 	err = os.WriteFile(scenarioPath, data, 0644)
 	require.NoError(t, err)
-	
+
 	scenarioService := NewScenarioService(tempDir)
 	gameService := NewGameService()
 	sceneService := NewSceneService(scenarioService, gameService)
-	
+
 	agent := createTestAgentForScene()
 	session, err := gameService.CreateSession(agent.ID, testScenario.ID)
 	require.NoError(t, err)
-	
+
 	return scenarioService, gameService, sceneService, session
 }
 
@@ -180,7 +180,7 @@ func TestSceneService_InteractWithObject(t *testing.T) {
 		result, err := sceneService.InteractWithObject(session.ID, "npc-1", "对话")
 		assert.NoError(t, err)
 		assert.True(t, result.Success)
-		assert.Contains(t, result.Description, "守卫")
+		assert.Contains(t, result.Description, "工厂工人")
 	})
 
 	t.Run("与不存在的对象交互", func(t *testing.T) {
@@ -201,12 +201,12 @@ func createTestAgentForScene() *domain.Agent {
 			},
 		},
 		Reality: &domain.Reality{
-			Type: "看护者",
-			Trigger: &domain.RealityTrigger{Name: "触发", Cost: 0, Effect: "效果", Consequence: "后果"},
-			OverloadRelief: &domain.OverloadRelief{Name: "解除", Condition: "条件", Effect: "效果"},
+			Type:             "看护者",
+			Trigger:          &domain.RealityTrigger{Name: "触发", Cost: 0, Effect: "效果", Consequence: "后果"},
+			OverloadRelief:   &domain.OverloadRelief{Name: "解除", Condition: "条件", Effect: "效果"},
 			DegradationTrack: &domain.DegradationTrack{Name: "轨道", Filled: 0, Total: 5},
 		},
 		Career: &domain.Career{Type: "公关", QA: map[string]int{"专注": 1}},
-		QA: map[string]int{"专注": 1},
+		QA:     map[string]int{"专注": 1},
 	}
 }
