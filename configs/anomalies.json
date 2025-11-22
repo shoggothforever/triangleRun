@@ -1,0 +1,781 @@
+{
+  "anomalies": [
+    {
+      "id": "whisper",
+      "name": "低语",
+      "description": "操控声音和语言的异常体",
+      "focus": {
+        "emotion": "沟通",
+        "subject": "语言"
+      },
+      "abilities": [
+        {
+          "id": "whisper-say-again",
+          "name": "再说一遍？",
+          "anomaly_type": "低语",
+          "trigger": {
+            "type": "response",
+            "description": "用'再说一遍？'回应一句说出的话"
+          },
+          "roll": {
+            "quality": "气场",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "目标会相信新的那句话才是他们本来的意思",
+              "mechanics": "改写目标刚说的话"
+            },
+            "failure": {
+              "description": "目标不受影响，你只能使用那句话中的词语交谈3小时",
+              "mechanics": "限制玩家词汇3小时"
+            },
+            "additional": [
+              {
+                "condition": "六个或更多3",
+                "effect": {
+                  "description": "你可以在接下来的一小时内随时替目标说话",
+                  "mechanics": "控制目标语言1小时"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "whisper-tip-tongue",
+          "name": "话到嘴边",
+          "anomaly_type": "低语",
+          "trigger": {
+            "type": "action",
+            "description": "让某人想起一个词或短语"
+          },
+          "roll": {
+            "quality": "共情",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "目标会想起那个词或短语，并可能说出来",
+              "mechanics": "植入记忆或想法"
+            },
+            "failure": {
+              "description": "你自己忘记了那个词，直到任务结束",
+              "mechanics": "玩家失去对该词的记忆"
+            },
+            "additional": [
+              {
+                "condition": "每额外一个3",
+                "effect": {
+                  "description": "可以让目标相信这个词很重要",
+                  "mechanics": "增强记忆重要性"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "whisper-silence",
+          "name": "静默",
+          "anomaly_type": "低语",
+          "trigger": {
+            "type": "action",
+            "description": "让一个区域完全安静"
+          },
+          "roll": {
+            "quality": "专业",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "该区域内所有声音消失，持续10分钟",
+              "mechanics": "创造静默区域",
+              "duration": "10分钟"
+            },
+            "failure": {
+              "description": "你自己失声3小时",
+              "mechanics": "玩家无法说话",
+              "duration": "3小时"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "catalog",
+      "name": "目录",
+      "description": "创造和复制物体的异常体",
+      "focus": {
+        "emotion": "占有",
+        "subject": "物品"
+      },
+      "abilities": [
+        {
+          "id": "catalog-duplicate",
+          "name": "复制",
+          "anomaly_type": "目录",
+          "trigger": {
+            "type": "action",
+            "description": "触摸一个物体并复制它"
+          },
+          "roll": {
+            "quality": "专注",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "创造该物体的完美复制品，持续1小时",
+              "mechanics": "复制物体",
+              "duration": "1小时"
+            },
+            "failure": {
+              "description": "复制品有明显缺陷，1小时后消失",
+              "mechanics": "创造有缺陷的复制品"
+            },
+            "additional": [
+              {
+                "condition": "每额外一个3",
+                "effect": {
+                  "description": "复制品持续时间延长1小时",
+                  "mechanics": "延长持续时间"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "catalog-manifest",
+          "name": "显现",
+          "anomaly_type": "目录",
+          "trigger": {
+            "type": "action",
+            "description": "从记忆中创造一个物体"
+          },
+          "roll": {
+            "quality": "专业",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "创造你记忆中的物体，持续到任务结束",
+              "mechanics": "从记忆创造物体"
+            },
+            "failure": {
+              "description": "创造出扭曲版本，可能有危险",
+              "mechanics": "创造扭曲物体"
+            }
+          }
+        },
+        {
+          "id": "catalog-inventory",
+          "name": "清单",
+          "anomaly_type": "目录",
+          "trigger": {
+            "type": "action",
+            "description": "感知区域内所有物体"
+          },
+          "roll": {
+            "quality": "专注",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "知道该区域内所有物体的位置和性质",
+              "mechanics": "物体感知"
+            },
+            "failure": {
+              "description": "被信息淹没，受到1点过载直到下次休息",
+              "mechanics": "信息过载"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "siphon",
+      "name": "汲取",
+      "description": "吸取和转移特质的异常体",
+      "focus": {
+        "emotion": "嫉妒",
+        "subject": "特质"
+      },
+      "abilities": [
+        {
+          "id": "siphon-drain",
+          "name": "汲取",
+          "anomaly_type": "汲取",
+          "trigger": {
+            "type": "action",
+            "description": "触摸目标并吸取其特质"
+          },
+          "roll": {
+            "quality": "共情",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "吸取目标的一个特质（技能、知识、情感），持续1小时",
+              "mechanics": "获得目标特质"
+            },
+            "failure": {
+              "description": "你失去自己的一个特质1小时",
+              "mechanics": "失去自身特质"
+            }
+          }
+        },
+        {
+          "id": "siphon-transfer",
+          "name": "转移",
+          "anomaly_type": "汲取",
+          "trigger": {
+            "type": "action",
+            "description": "将特质从一个目标转移到另一个"
+          },
+          "roll": {
+            "quality": "欺瞒",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "成功转移特质，持续到任务结束",
+              "mechanics": "特质转移"
+            },
+            "failure": {
+              "description": "特质消失，两个目标都失去它",
+              "mechanics": "特质消失"
+            }
+          }
+        },
+        {
+          "id": "siphon-sense",
+          "name": "感知",
+          "anomaly_type": "汲取",
+          "trigger": {
+            "type": "passive",
+            "description": "感知他人的情感和欲望"
+          },
+          "roll": {
+            "quality": "共情",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "清楚感知目标的情感状态和欲望",
+              "mechanics": "情感感知"
+            },
+            "failure": {
+              "description": "被目标的情感淹没，受其影响1小时",
+              "mechanics": "情感反噬"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "timepiece",
+      "name": "时计",
+      "description": "操控时间流动的异常体",
+      "focus": {
+        "emotion": "焦虑",
+        "subject": "时间"
+      },
+      "abilities": [
+        {
+          "id": "timepiece-rewind",
+          "name": "倒带",
+          "anomaly_type": "时计",
+          "trigger": {
+            "type": "reactive",
+            "description": "在事件发生后立即倒回时间"
+          },
+          "roll": {
+            "quality": "主动",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "时间倒回30秒，只有你记得发生了什么",
+              "mechanics": "时间倒流"
+            },
+            "failure": {
+              "description": "时间跳跃，你失去接下来10分钟的记忆",
+              "mechanics": "记忆缺失"
+            }
+          }
+        },
+        {
+          "id": "timepiece-slow",
+          "name": "缓慢",
+          "anomaly_type": "时计",
+          "trigger": {
+            "type": "action",
+            "description": "减慢目标的时间流速"
+          },
+          "roll": {
+            "quality": "专业",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "目标的动作变得极其缓慢，持续1分钟",
+              "mechanics": "时间减速"
+            },
+            "failure": {
+              "description": "你自己的时间变慢，持续1分钟",
+              "mechanics": "自身减速"
+            }
+          }
+        },
+        {
+          "id": "timepiece-glimpse",
+          "name": "一瞥",
+          "anomaly_type": "时计",
+          "trigger": {
+            "type": "action",
+            "description": "看到未来的片段"
+          },
+          "roll": {
+            "quality": "专注",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "看到接下来1小时内的一个重要事件",
+              "mechanics": "预知未来"
+            },
+            "failure": {
+              "description": "看到令人不安的可能未来，受到1点过载",
+              "mechanics": "不祥预兆"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "growth",
+      "name": "生长",
+      "description": "改变身体和感知的异常体",
+      "focus": {
+        "emotion": "变化",
+        "subject": "身体"
+      },
+      "abilities": [
+        {
+          "id": "growth-eyes",
+          "name": "眼睛",
+          "anomaly_type": "生长",
+          "trigger": {
+            "type": "action",
+            "description": "睁开几只额外的眼睛"
+          },
+          "roll": {
+            "quality": "专业",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "身体长出新眼睛，获得特殊视觉能力，持续1小时",
+              "mechanics": "特殊视觉（热成像、夜视、X光等）"
+            },
+            "failure": {
+              "description": "看见终末的幻象，任务剩余时间所有掷骰受到1点额外过载",
+              "mechanics": "终末幻象"
+            }
+          }
+        },
+        {
+          "id": "growth-limbs",
+          "name": "肢体",
+          "anomaly_type": "生长",
+          "trigger": {
+            "type": "action",
+            "description": "长出额外的肢体"
+          },
+          "roll": {
+            "quality": "活力",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "长出额外肢体，可以同时进行多个动作",
+              "mechanics": "多重行动"
+            },
+            "failure": {
+              "description": "肢体生长失控，行动受阻1小时",
+              "mechanics": "失控生长"
+            }
+          }
+        },
+        {
+          "id": "growth-adapt",
+          "name": "适应",
+          "anomaly_type": "生长",
+          "trigger": {
+            "type": "reactive",
+            "description": "身体适应环境威胁"
+          },
+          "roll": {
+            "quality": "坚毅",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "身体快速适应，免疫当前环境威胁",
+              "mechanics": "环境适应"
+            },
+            "failure": {
+              "description": "适应过度，变得脆弱于其他威胁",
+              "mechanics": "过度适应"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "gun",
+      "name": "枪械",
+      "description": "终结和抹除的异常体",
+      "focus": {
+        "emotion": "愤怒",
+        "subject": "终结"
+      },
+      "abilities": [
+        {
+          "id": "gun-erase",
+          "name": "抹除",
+          "anomaly_type": "枪械",
+          "trigger": {
+            "type": "action",
+            "description": "抹除目标的存在"
+          },
+          "roll": {
+            "quality": "坚毅",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "目标从现实中暂时抹除，持续10分钟",
+              "mechanics": "存在抹除"
+            },
+            "failure": {
+              "description": "你自己部分被抹除，失去一个感官1小时",
+              "mechanics": "感官丧失"
+            }
+          }
+        },
+        {
+          "id": "gun-end",
+          "name": "终结",
+          "anomaly_type": "枪械",
+          "trigger": {
+            "type": "action",
+            "description": "终结一个过程或状态"
+          },
+          "roll": {
+            "quality": "主动",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "立即终结目标状态（燃烧、移动、思考等）",
+              "mechanics": "状态终结"
+            },
+            "failure": {
+              "description": "你自己的一个过程被终结（呼吸、心跳等），受到1点伤害",
+              "mechanics": "自身终结"
+            }
+          }
+        },
+        {
+          "id": "gun-unmake",
+          "name": "解构",
+          "anomaly_type": "枪械",
+          "trigger": {
+            "type": "action",
+            "description": "将物体分解为组成部分"
+          },
+          "roll": {
+            "quality": "专注",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "物体分解为原始材料",
+              "mechanics": "物体分解"
+            },
+            "failure": {
+              "description": "分解失控，波及周围物体",
+              "mechanics": "失控分解"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "dream",
+      "name": "梦境",
+      "description": "创造幻象和进入艺术的异常体",
+      "focus": {
+        "emotion": "想象",
+        "subject": "幻象"
+      },
+      "abilities": [
+        {
+          "id": "dream-illusion",
+          "name": "幻象",
+          "anomaly_type": "梦境",
+          "trigger": {
+            "type": "action",
+            "description": "创造一个幻象"
+          },
+          "roll": {
+            "quality": "欺瞒",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "创造逼真的幻象，持续10分钟",
+              "mechanics": "幻象创造"
+            },
+            "failure": {
+              "description": "幻象失控，你无法分辨真实与虚幻1小时",
+              "mechanics": "现实混淆"
+            }
+          }
+        },
+        {
+          "id": "dream-enter",
+          "name": "进入",
+          "anomaly_type": "梦境",
+          "trigger": {
+            "type": "action",
+            "description": "进入艺术作品或梦境"
+          },
+          "roll": {
+            "quality": "专业",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "进入目标的梦境或艺术作品内部",
+              "mechanics": "梦境进入"
+            },
+            "failure": {
+              "description": "被困在梦境中，需要他人帮助才能脱离",
+              "mechanics": "梦境困锁"
+            }
+          }
+        },
+        {
+          "id": "dream-inspire",
+          "name": "启发",
+          "anomaly_type": "梦境",
+          "trigger": {
+            "type": "action",
+            "description": "给予目标灵感或噩梦"
+          },
+          "roll": {
+            "quality": "气场",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "目标获得强烈的灵感或恐惧",
+              "mechanics": "情感植入"
+            },
+            "failure": {
+              "description": "你自己被噩梦困扰，受到1点过载",
+              "mechanics": "噩梦反噬"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "manifold",
+      "name": "流形",
+      "description": "操控空间和重力的异常体",
+      "focus": {
+        "emotion": "迷失",
+        "subject": "空间"
+      },
+      "abilities": [
+        {
+          "id": "manifold-fold",
+          "name": "折叠",
+          "anomaly_type": "流形",
+          "trigger": {
+            "type": "action",
+            "description": "折叠空间，缩短距离"
+          },
+          "roll": {
+            "quality": "主动",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "两点之间的距离缩短，可以快速移动",
+              "mechanics": "空间折叠"
+            },
+            "failure": {
+              "description": "空间扭曲失控，你被传送到随机位置",
+              "mechanics": "随机传送"
+            }
+          }
+        },
+        {
+          "id": "manifold-gravity",
+          "name": "重力",
+          "anomaly_type": "流形",
+          "trigger": {
+            "type": "action",
+            "description": "改变区域内的重力"
+          },
+          "roll": {
+            "quality": "专业",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "改变重力方向或强度，持续1分钟",
+              "mechanics": "重力操控"
+            },
+            "failure": {
+              "description": "你自己受到重力异常影响，行动困难",
+              "mechanics": "重力失控"
+            }
+          }
+        },
+        {
+          "id": "manifold-pocket",
+          "name": "口袋",
+          "anomaly_type": "流形",
+          "trigger": {
+            "type": "action",
+            "description": "创造一个口袋空间"
+          },
+          "roll": {
+            "quality": "专注",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "创造小型口袋空间，可以存储物品",
+              "mechanics": "空间存储"
+            },
+            "failure": {
+              "description": "空间不稳定，存储的物品可能丢失",
+              "mechanics": "不稳定空间"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "absence",
+      "name": "缺位",
+      "description": "消失和遗忘的异常体",
+      "focus": {
+        "emotion": "孤独",
+        "subject": "遗忘"
+      },
+      "abilities": [
+        {
+          "id": "absence-vanish",
+          "name": "消失",
+          "anomaly_type": "缺位",
+          "trigger": {
+            "type": "action",
+            "description": "从他人感知中消失"
+          },
+          "roll": {
+            "quality": "诡秘",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "你从他人感知中消失，持续10分钟",
+              "mechanics": "感知消失"
+            },
+            "failure": {
+              "description": "你部分消失，失去对自己身体的控制",
+              "mechanics": "部分消失"
+            }
+          }
+        },
+        {
+          "id": "absence-forget",
+          "name": "遗忘",
+          "anomaly_type": "缺位",
+          "trigger": {
+            "type": "action",
+            "description": "让目标遗忘某事"
+          },
+          "roll": {
+            "quality": "欺瞒",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "目标遗忘指定的记忆或信息",
+              "mechanics": "记忆抹除"
+            },
+            "failure": {
+              "description": "你自己遗忘重要信息",
+              "mechanics": "自身遗忘"
+            }
+          }
+        },
+        {
+          "id": "absence-unmemorable",
+          "name": "平凡",
+          "anomaly_type": "缺位",
+          "trigger": {
+            "type": "passive",
+            "description": "让自己变得难以记住"
+          },
+          "roll": {
+            "quality": "诡秘",
+            "dice_count": 6,
+            "dice_type": 4
+          },
+          "effects": {
+            "success": {
+              "description": "他人难以记住你的特征和行为",
+              "mechanics": "记忆模糊"
+            },
+            "failure": {
+              "description": "你自己忘记自己是谁，持续1小时",
+              "mechanics": "身份遗忘"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,432 @@
+{
+  "careers": [
+    {
+      "id": "public-relations",
+      "name": "公关",
+      "description": "负责管理机构形象和控制信息流",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 1,
+          "共情": 2,
+          "气场": 2,
+          "欺瞒": 2,
+          "主动": 1,
+          "专业": 1,
+          "活力": 0,
+          "坚毅": 0,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "说服他人相信一切正常",
+          "reward": 1
+        },
+        {
+          "action": "成功消除散逸端",
+          "reward": 2
+        },
+        {
+          "action": "在公众场合代表机构发言",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不让机构的真实运作被公众知晓",
+        "violation": 3
+      },
+      "initial_claimable": {
+        "id": "pr-spin-kit",
+        "name": "公关应急包",
+        "description": "包含各种用于控制叙事的工具"
+      },
+      "assessment_questions": [
+        "你最擅长哪种社交场合？",
+        "你如何处理危机？",
+        "你最不想让人知道的秘密是什么？"
+      ]
+    },
+    {
+      "id": "rd",
+      "name": "研发",
+      "description": "研究异常现象和开发新技术",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 3,
+          "共情": 0,
+          "气场": 0,
+          "欺瞒": 1,
+          "主动": 1,
+          "专业": 3,
+          "活力": 0,
+          "坚毅": 1,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "成功分析异常体特性",
+          "reward": 2
+        },
+        {
+          "action": "开发新的收容方法",
+          "reward": 2
+        },
+        {
+          "action": "记录详细的研究数据",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不在未经授权的情况下进行危险实验",
+        "violation": 3
+      },
+      "initial_claimable": {
+        "id": "rd-scanner",
+        "name": "异常扫描仪",
+        "description": "用于检测和分析异常能量"
+      },
+      "assessment_questions": [
+        "你最感兴趣的研究领域是什么？",
+        "你如何平衡好奇心和安全？",
+        "你最大的研究失败是什么？"
+      ]
+    },
+    {
+      "id": "barista",
+      "name": "咖啡师",
+      "description": "提供服务和支持，维持团队士气",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 1,
+          "共情": 3,
+          "气场": 2,
+          "欺瞒": 0,
+          "主动": 1,
+          "专业": 2,
+          "活力": 0,
+          "坚毅": 0,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "提升队友士气",
+          "reward": 1
+        },
+        {
+          "action": "在关键时刻提供支持",
+          "reward": 2
+        },
+        {
+          "action": "照顾受伤或疲惫的队友",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不让队友在需要时得不到支持",
+        "violation": 2
+      },
+      "initial_claimable": {
+        "id": "barista-kit",
+        "name": "咖啡师工具包",
+        "description": "包含提神饮料和急救用品"
+      },
+      "assessment_questions": [
+        "你如何让他人感到舒适？",
+        "你最擅长提供什么类型的支持？",
+        "你如何处理他人的情绪？"
+      ]
+    },
+    {
+      "id": "ceo",
+      "name": "CEO",
+      "description": "享受特权和权力，做出关键决策",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 1,
+          "共情": 0,
+          "气场": 3,
+          "欺瞒": 2,
+          "主动": 2,
+          "专业": 1,
+          "活力": 0,
+          "坚毅": 0,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "做出关键决策并承担责任",
+          "reward": 2
+        },
+        {
+          "action": "成功领导团队完成任务",
+          "reward": 2
+        },
+        {
+          "action": "利用权力解决问题",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不让个人利益损害机构利益",
+        "violation": 3
+      },
+      "initial_claimable": {
+        "id": "ceo-authority",
+        "name": "高级权限卡",
+        "description": "可以访问机构的高级资源"
+      },
+      "assessment_questions": [
+        "你如何做出困难的决定？",
+        "你如何平衡权力和责任？",
+        "你最大的领导失误是什么？"
+      ]
+    },
+    {
+      "id": "intern",
+      "name": "实习生",
+      "description": "机构的新人，渴望学习和证明自己",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 1,
+          "共情": 1,
+          "气场": 1,
+          "欺瞒": 1,
+          "主动": 1,
+          "专业": 1,
+          "活力": 1,
+          "坚毅": 1,
+          "诡秘": 1
+        },
+        "note": "实习生在所有资质上都有1点，体现其全面但不精通"
+      },
+      "permitted_behaviors": [
+        {
+          "action": "向资深特工请教并应用建议",
+          "reward": 1
+        },
+        {
+          "action": "主动承担额外工作",
+          "reward": 1
+        },
+        {
+          "action": "在任务中学到新技能",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不质疑上级的命令或机构的决策",
+        "violation": 2
+      },
+      "special_mechanic": {
+        "name": "快速学习",
+        "description": "每次任务后可以重新分配1点QA到任何资质"
+      },
+      "initial_claimable": {
+        "id": "intern-handbook",
+        "name": "实习生手册",
+        "description": "包含基础指南和紧急联系方式"
+      },
+      "assessment_questions": [
+        "你为什么想加入机构？",
+        "你最崇拜哪位资深特工？",
+        "你最害怕在工作中犯什么错误？"
+      ]
+    },
+    {
+      "id": "gravedigger",
+      "name": "掘墓人",
+      "description": "处理后果和清理现场",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 2,
+          "共情": 0,
+          "气场": 0,
+          "欺瞒": 1,
+          "主动": 1,
+          "专业": 3,
+          "活力": 1,
+          "坚毅": 1,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "成功清理异常事件现场",
+          "reward": 2
+        },
+        {
+          "action": "处理尸体或危险物品",
+          "reward": 1
+        },
+        {
+          "action": "消除证据",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不留下任何异常活动的证据",
+        "violation": 3
+      },
+      "initial_claimable": {
+        "id": "gravedigger-tools",
+        "name": "清理工具包",
+        "description": "包含各种清理和处理工具"
+      },
+      "assessment_questions": [
+        "你如何处理令人不安的场景？",
+        "你最难清理的现场是什么？",
+        "你如何保持专业和冷静？"
+      ]
+    },
+    {
+      "id": "reception",
+      "name": "接待处",
+      "description": "协调沟通，连接各方",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 1,
+          "共情": 2,
+          "气场": 2,
+          "欺瞒": 1,
+          "主动": 2,
+          "专业": 1,
+          "活力": 0,
+          "坚毅": 0,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "成功协调团队行动",
+          "reward": 2
+        },
+        {
+          "action": "建立有用的联系",
+          "reward": 1
+        },
+        {
+          "action": "传递关键信息",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不让信息传递失误导致任务失败",
+        "violation": 2
+      },
+      "initial_claimable": {
+        "id": "reception-network",
+        "name": "联络网络",
+        "description": "可以快速联系各方人员"
+      },
+      "assessment_questions": [
+        "你如何建立信任？",
+        "你最擅长协调什么类型的冲突？",
+        "你如何处理机密信息？"
+      ]
+    },
+    {
+      "id": "hotline",
+      "name": "热线",
+      "description": "提供支持和危机干预",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 1,
+          "共情": 3,
+          "气场": 1,
+          "欺瞒": 0,
+          "主动": 1,
+          "专业": 2,
+          "活力": 0,
+          "坚毅": 1,
+          "诡秘": 0
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "成功安抚恐慌的人",
+          "reward": 2
+        },
+        {
+          "action": "提供心理支持",
+          "reward": 1
+        },
+        {
+          "action": "防止情况恶化",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不让求助者在危机中得不到帮助",
+        "violation": 2
+      },
+      "initial_claimable": {
+        "id": "hotline-guide",
+        "name": "危机干预指南",
+        "description": "包含各种危机处理方法"
+      },
+      "assessment_questions": [
+        "你如何安抚恐慌的人？",
+        "你最难处理的危机是什么？",
+        "你如何保护自己的心理健康？"
+      ]
+    },
+    {
+      "id": "clown",
+      "name": "小丑",
+      "description": "娱乐士气，用幽默化解紧张",
+      "initial_qa": {
+        "total": 9,
+        "distribution": {
+          "专注": 0,
+          "共情": 2,
+          "气场": 3,
+          "欺瞒": 1,
+          "主动": 1,
+          "专业": 0,
+          "活力": 1,
+          "坚毅": 0,
+          "诡秘": 1
+        }
+      },
+      "permitted_behaviors": [
+        {
+          "action": "用幽默化解紧张局势",
+          "reward": 2
+        },
+        {
+          "action": "提升团队士气",
+          "reward": 1
+        },
+        {
+          "action": "用表演分散注意力",
+          "reward": 1
+        }
+      ],
+      "prime_directive": {
+        "description": "绝不让团队在压力下崩溃",
+        "violation": 2
+      },
+      "initial_claimable": {
+        "id": "clown-props",
+        "name": "表演道具",
+        "description": "各种用于娱乐和分散注意力的道具"
+      },
+      "assessment_questions": [
+        "你如何让人发笑？",
+        "你最成功的表演是什么？",
+        "你如何在严肃时刻保持幽默？"
+      ]
+    }
+  ]
+}

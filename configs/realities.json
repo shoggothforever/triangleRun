@@ -1,0 +1,334 @@
+{
+  "realities": [
+    {
+      "id": "caretaker",
+      "name": "看护者",
+      "description": "与受照料者有深厚羁绊",
+      "special_feature": {
+        "type": "dependent",
+        "name": "受照料者",
+        "options": ["婴儿", "动物", "新生AI", "外星人"],
+        "mechanics": "共享角色，享受人寿保险福利"
+      },
+      "trigger": {
+        "name": "需要关爱",
+        "cost": 0,
+        "effect": "受照料者需要你的关注",
+        "consequence": "如果忽视，与受照料者情谊最淡的人际关系失去1点连结"
+      },
+      "overload_relief": {
+        "name": "这是你的最爱！",
+        "condition": "做某件能让受照料者开心的事",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "独立",
+        "boxes": 4,
+        "trigger": "让受照料者自己解决问题、伤害他们或交给他人监管",
+        "consequence": "填满后受照料者不再依赖你，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [6, 3, 3],
+        "questions": [
+          "如果你不在了，谁会获得受照料者的监护权？",
+          "谁怀念你曾经拥有的自由？",
+          "受照料者总是很兴奋能和谁待在一起？"
+        ]
+      }
+    },
+    {
+      "id": "schedule-overload",
+      "name": "日程过载",
+      "description": "兼顾多份工作和责任",
+      "special_feature": {
+        "type": "multiple-jobs",
+        "mechanics": "同时兼顾机构工作和其他职业"
+      },
+      "trigger": {
+        "name": "时间冲突",
+        "cost": 1,
+        "effect": "你的其他工作需要你立即处理",
+        "consequence": "如果忽视，失去该工作或受到严重后果"
+      },
+      "overload_relief": {
+        "name": "多任务处理",
+        "condition": "成功同时处理两件事",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "崩溃",
+        "boxes": 4,
+        "trigger": "完全放弃一项责任或严重失职",
+        "consequence": "填满后你精疲力竭，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [5, 4, 3],
+        "questions": [
+          "谁总是抱怨你太忙？",
+          "谁依赖你的另一份工作？",
+          "谁理解你的处境并提供支持？"
+        ]
+      }
+    },
+    {
+      "id": "hunted",
+      "name": "受追猎者",
+      "description": "正在躲避自己的过去",
+      "special_feature": {
+        "type": "dark-past",
+        "categories": ["罪犯", "被猎者", "不告而别"],
+        "mechanics": "玩家私下告知GM秘密"
+      },
+      "trigger": {
+        "name": "踪迹暴露",
+        "cost": 0,
+        "effect": "有人认出了你",
+        "consequence": "如果不消除踪迹，最不熟的人际关系失去1点连结并问棘手问题"
+      },
+      "overload_relief": {
+        "name": "不是我",
+        "condition": "做某件能掩盖踪迹的事",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "败露",
+        "boxes": 4,
+        "trigger": "向能认出你的人暴露新身份或位置",
+        "consequence": "过去追上你，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [6, 4, 2],
+        "questions": [
+          "谁知道你的追猎者？",
+          "谁会因发现真相而受最深的伤？",
+          "谁对新的你痴迷不已？"
+        ]
+      }
+    },
+    {
+      "id": "star",
+      "name": "明星",
+      "description": "公众人物，受到关注和期待",
+      "special_feature": {
+        "type": "fame",
+        "categories": ["演员", "音乐家", "网红", "运动员"],
+        "mechanics": "在公众场合容易被认出"
+      },
+      "trigger": {
+        "name": "粉丝出现",
+        "cost": 1,
+        "effect": "粉丝或媒体出现，要求你的注意",
+        "consequence": "如果忽视，公众形象受损，失去1点连结"
+      },
+      "overload_relief": {
+        "name": "聚光灯下",
+        "condition": "利用你的名气解决问题",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "丑闻",
+        "boxes": 4,
+        "trigger": "公开做出有损形象的事",
+        "consequence": "填满后名声扫地，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [5, 4, 3],
+        "questions": [
+          "谁是你最忠实的粉丝？",
+          "谁嫉妒你的成功？",
+          "谁知道你成名前的样子？"
+        ]
+      }
+    },
+    {
+      "id": "struggling",
+      "name": "挣扎求生",
+      "description": "面临经济困难和生存压力",
+      "special_feature": {
+        "type": "poverty",
+        "mechanics": "缺乏基本资源，需要精打细算"
+      },
+      "trigger": {
+        "name": "账单到期",
+        "cost": 1,
+        "effect": "紧急的财务问题需要解决",
+        "consequence": "如果忽视，失去住所、服务或重要物品"
+      },
+      "overload_relief": {
+        "name": "凑合着用",
+        "condition": "用有限资源巧妙解决问题",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "破产",
+        "boxes": 4,
+        "trigger": "失去重要收入来源或承担巨额债务",
+        "consequence": "填满后完全破产，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [6, 3, 3],
+        "questions": [
+          "谁借给你钱或提供帮助？",
+          "谁和你一起挣扎？",
+          "谁不理解你的困境？"
+        ]
+      }
+    },
+    {
+      "id": "newborn",
+      "name": "新生儿",
+      "description": "初来乍到，对世界充满好奇",
+      "special_feature": {
+        "type": "inexperience",
+        "categories": ["外星人", "AI", "时间旅行者", "异世界来客"],
+        "mechanics": "对常识缺乏了解，但学习快速"
+      },
+      "trigger": {
+        "name": "文化冲突",
+        "cost": 0,
+        "effect": "你的行为暴露了你的不同",
+        "consequence": "如果不解释，引起怀疑，最弱人际关系失去1点连结"
+      },
+      "overload_relief": {
+        "name": "新鲜视角",
+        "condition": "用独特的视角解决问题",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "同化",
+        "boxes": 4,
+        "trigger": "完全接受当地文化，放弃原有特质",
+        "consequence": "填满后完全融入，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [6, 4, 2],
+        "questions": [
+          "谁在教你适应这个世界？",
+          "谁对你的来历感到好奇？",
+          "谁把你当作威胁？"
+        ]
+      }
+    },
+    {
+      "id": "romantic",
+      "name": "浪漫主义",
+      "description": "情感复杂，追求理想关系",
+      "special_feature": {
+        "type": "love-interest",
+        "mechanics": "有一个重要的恋爱对象"
+      },
+      "trigger": {
+        "name": "关系危机",
+        "cost": 1,
+        "effect": "你的恋情出现问题",
+        "consequence": "如果忽视，与恋人的连结失去1点"
+      },
+      "overload_relief": {
+        "name": "为爱而战",
+        "condition": "为保护或取悦恋人而行动",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "心碎",
+        "boxes": 4,
+        "trigger": "严重伤害恋人或被恋人伤害",
+        "consequence": "填满后关系破裂，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [6, 3, 3],
+        "questions": [
+          "谁是你的恋人？",
+          "谁反对你们的关系？",
+          "谁给你们的关系提供建议？"
+        ]
+      }
+    },
+    {
+      "id": "pillar",
+      "name": "支柱",
+      "description": "社区依靠你的支持和领导",
+      "special_feature": {
+        "type": "community-leader",
+        "mechanics": "对社区有重要影响力和责任"
+      },
+      "trigger": {
+        "name": "社区需要",
+        "cost": 1,
+        "effect": "社区面临危机，需要你的帮助",
+        "consequence": "如果忽视，社区受损，失去1点连结"
+      },
+      "overload_relief": {
+        "name": "众望所归",
+        "condition": "成功领导或帮助社区",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "失信",
+        "boxes": 4,
+        "trigger": "严重辜负社区信任",
+        "consequence": "填满后失去领导地位，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [5, 4, 3],
+        "questions": [
+          "谁最依赖你的领导？",
+          "谁想取代你的位置？",
+          "谁理解你的压力？"
+        ]
+      }
+    },
+    {
+      "id": "outsider",
+      "name": "异类",
+      "description": "格格不入，难以融入主流",
+      "special_feature": {
+        "type": "different",
+        "categories": ["外貌", "信仰", "价值观", "生活方式"],
+        "mechanics": "在社交场合感到不适"
+      },
+      "trigger": {
+        "name": "排斥",
+        "cost": 0,
+        "effect": "你被排斥或歧视",
+        "consequence": "如果不反抗，内化伤害，失去1点连结"
+      },
+      "overload_relief": {
+        "name": "与众不同",
+        "condition": "利用你的独特性解决问题",
+        "effect": "无视所有过载"
+      },
+      "degradation_track": {
+        "name": "孤立",
+        "boxes": 4,
+        "trigger": "主动疏远他人或被完全孤立",
+        "consequence": "填满后完全孤立，必须选择新现实"
+      },
+      "relationships": {
+        "count": 3,
+        "total_connection": 12,
+        "suggested_distribution": [6, 4, 2],
+        "questions": [
+          "谁接受真实的你？",
+          "谁试图改变你？",
+          "谁和你一样是异类？"
+        ]
+      }
+    }
+  ]
+}

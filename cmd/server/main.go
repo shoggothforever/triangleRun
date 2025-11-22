@@ -18,6 +18,8 @@ import (
 	"github.com/trpg-solo-engine/backend/internal/domain"
 	"github.com/trpg-solo-engine/backend/internal/handler"
 	"github.com/trpg-solo-engine/backend/internal/infrastructure/database"
+
+	// "github.com/trpg-solo-engine/backend/internal/middleware"
 	"github.com/trpg-solo-engine/backend/internal/service"
 )
 
@@ -129,7 +131,12 @@ func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, dic
 
 	// 添加中间件
 	router.Use(gin.Recovery())
+	// 使用简单的内联日志中间件（可以替换为 middleware.LoggerMiddleware(logger)）
 	router.Use(loggerMiddleware(logger))
+
+	// 可选：使用更强大的日志中间件
+	// router.Use(middleware.LoggerMiddleware(logger))
+	// router.Use(middleware.PerformanceTrackerMiddleware(logger))
 
 	// 健康检查端点
 	router.GET("/health", func(c *gin.Context) {
