@@ -1,0 +1,31 @@
+server:
+  port: "8080"
+  mode: "debug"  # debug, release
+
+log:
+  level: "info"  # debug, info, warn, error
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "trpg"
+  password: "trpg_password"
+  dbname: "trpg_solo_engine"
+  sslmode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 300  # seconds
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+ai:
+  provider: "openai"  # openai, local
+  api_key: ""
+  model: "gpt-4"
+  base_url: ""
+  timeout: 30  # seconds
