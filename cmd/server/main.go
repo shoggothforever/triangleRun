@@ -15,6 +15,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/trpg-solo-engine/backend/internal/domain"
+	"github.com/trpg-solo-engine/backend/internal/handler"
 	"github.com/trpg-solo-engine/backend/internal/infrastructure/database"
 )
 
@@ -49,8 +51,11 @@ func main() {
 	}
 	defer redisClient.Close()
 
+	// 初始化服务
+	diceService := domain.NewDiceService()
+
 	// 创建Gin路由
-	router := setupRouter(logger, db, redisClient)
+	router := setupRouter(logger, db, redisClient, diceService)
 
 	// 创建HTTP服务器
 	port := viper.GetString("server.port")
@@ -109,7 +114,7 @@ func loadConfig() error {
 	return nil
 }
 
-func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client) *gin.Engine {
+func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, diceService domain.DiceService) *gin.Engine {
 	// 设置Gin模式
 	if viper.GetString("server.mode") == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -144,6 +149,9 @@ func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client) *gi
 		})
 	})
 
+	// 初始化处理器
+	diceHandler := handler.NewDiceHandler(diceService)
+
 	// API路由组
 	api := router.Group("/api")
 	{
@@ -153,6 +161,12 @@ func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client) *gi
 				"name":    "TRPG Solo Engine",
 			})
 		})
+
+		// 骰子API
+		dice := api.Group("/dice")
+		{
+			dice.POST("/roll", diceHandler.RollDice)
+		}
 	}
 
 	return router
