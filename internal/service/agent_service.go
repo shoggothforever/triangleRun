@@ -8,9 +8,30 @@ import (
 )
 
 type AgentService interface {
+	// 角色管理
 	CreateAgent(req *CreateAgentRequest) (*domain.Agent, error)
 	GetAgent(agentID string) (*domain.Agent, error)
+	UpdateAgent(agent *domain.Agent) error
+	DeleteAgent(agentID string) error
 	ListAgents() ([]*domain.Agent, error)
+
+	// ARC管理
+	SetAnomaly(agentID string, anomalyType string) error
+	SetReality(agentID string, realityType string) error
+	SetCareer(agentID string, careerType string) error
+
+	// 资质保证
+	SpendQA(agentID, quality string, amount int) error
+	RestoreQA(agentID string) error
+
+	// 人际关系
+	AddRelationship(agentID string, rel *domain.Relationship) error
+	UpdateRelationship(agentID, relID string, connection int) error
+
+	// 绩效
+	AddCommendations(agentID string, amount int) error
+	AddReprimands(agentID string, amount int) error
+	UpdateRating(agentID string) error
 }
 
 type CreateAgentRequest struct {
@@ -104,12 +125,245 @@ func (s *agentService) GetAgent(agentID string) (*domain.Agent, error) {
 	return agent, nil
 }
 
+func (s *agentService) UpdateAgent(agent *domain.Agent) error {
+	if _, exists := s.agents[agent.ID]; !exists {
+		return domain.NewGameError(domain.ErrNotFound, "角色不存在")
+	}
+
+	// 验证ARC
+	if err := agent.ValidateARC(); err != nil {
+		return err
+	}
+
+	agent.UpdatedAt = time.Now()
+	s.agents[agent.ID] = agent
+	return nil
+}
+
+func (s *agentService) DeleteAgent(agentID string) error {
+	if _, exists := s.agents[agentID]; !exists {
+		return domain.NewGameError(domain.ErrNotFound, "角色不存在")
+	}
+
+	delete(s.agents, agentID)
+	return nil
+}
+
 func (s *agentService) ListAgents() ([]*domain.Agent, error) {
 	agents := make([]*domain.Agent, 0, len(s.agents))
 	for _, agent := range s.agents {
 		agents = append(agents, agent)
 	}
 	return agents, nil
+}
+
+// SetAnomaly 设置异常体类型
+func (s *agentService) SetAnomaly(agentID string, anomalyType string) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	// 验证异常体类型
+	validType := false
+	for _, t := range domain.AllAnomalyTypes {
+		if t == anomalyType {
+			validType = true
+			break
+		}
+	}
+	if !validType {
+		return domain.NewGameError(domain.ErrInvalidARC, "无效的异常体类型").
+			WithDetails("type", anomalyType)
+	}
+
+	agent.Anomaly = &domain.Anomaly{
+		Type:      anomalyType,
+		Abilities: createDefaultAbilities(anomalyType),
+	}
+	agent.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// SetReality 设置现实类型
+func (s *agentService) SetReality(agentID string, realityType string) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	// 验证现实类型
+	validType := false
+	for _, t := range domain.AllRealityTypes {
+		if t == realityType {
+			validType = true
+			break
+		}
+	}
+	if !validType {
+		return domain.NewGameError(domain.ErrInvalidARC, "无效的现实类型").
+			WithDetails("type", realityType)
+	}
+
+	agent.Reality = &domain.Reality{
+		Type: realityType,
+		Trigger: &domain.RealityTrigger{
+			Name:        "现实触发",
+			Cost:        0,
+			Effect:      "触发效果",
+			Consequence: "忽视后果",
+		},
+		OverloadRelief: &domain.OverloadRelief{
+			Name:      "过载解除",
+			Condition: "满足条件",
+			Effect:    "无视所有过载",
+		},
+		DegradationTrack: &domain.DegradationTrack{
+			Name:   "退化轨道",
+			Filled: 0,
+			Total:  4,
+		},
+	}
+	agent.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// SetCareer 设置职能类型
+func (s *agentService) SetCareer(agentID string, careerType string) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	// 验证职能类型
+	validType := false
+	for _, t := range domain.AllCareerTypes {
+		if t == careerType {
+			validType = true
+			break
+		}
+	}
+	if !validType {
+		return domain.NewGameError(domain.ErrInvalidARC, "无效的职能类型").
+			WithDetails("type", careerType)
+	}
+
+	qa := getDefaultQA(careerType)
+	agent.Career = &domain.Career{
+		Type: careerType,
+		QA:   qa,
+	}
+	agent.QA = qa
+	agent.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// SpendQA 花费资质保证
+func (s *agentService) SpendQA(agentID, quality string, amount int) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	if err := agent.SpendQA(quality, amount); err != nil {
+		return err
+	}
+
+	agent.UpdatedAt = time.Now()
+	return nil
+}
+
+// RestoreQA 恢复资质保证
+func (s *agentService) RestoreQA(agentID string) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	agent.RestoreQA()
+	agent.UpdatedAt = time.Now()
+	return nil
+}
+
+// AddRelationship 添加人际关系
+func (s *agentService) AddRelationship(agentID string, rel *domain.Relationship) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	// 生成ID如果没有
+	if rel.ID == "" {
+		rel.ID = uuid.New().String()
+	}
+
+	agent.Relationships = append(agent.Relationships, rel)
+	agent.UpdatedAt = time.Now()
+	return nil
+}
+
+// UpdateRelationship 更新人际关系连结点数
+func (s *agentService) UpdateRelationship(agentID, relID string, connection int) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for _, rel := range agent.Relationships {
+		if rel.ID == relID {
+			rel.Connection = connection
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return domain.NewGameError(domain.ErrNotFound, "人际关系不存在").
+			WithDetails("relationship_id", relID)
+	}
+
+	agent.UpdatedAt = time.Now()
+	return nil
+}
+
+// AddCommendations 添加嘉奖
+func (s *agentService) AddCommendations(agentID string, amount int) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	agent.AddCommendations(amount)
+	agent.UpdatedAt = time.Now()
+	return nil
+}
+
+// AddReprimands 添加申诫
+func (s *agentService) AddReprimands(agentID string, amount int) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	agent.AddReprimands(amount)
+	agent.UpdatedAt = time.Now()
+	return nil
+}
+
+// UpdateRating 更新机构评级
+func (s *agentService) UpdateRating(agentID string) error {
+	agent, err := s.GetAgent(agentID)
+	if err != nil {
+		return err
+	}
+
+	agent.Rating = domain.GetRating(agent.Reprimands)
+	agent.UpdatedAt = time.Now()
+	return nil
 }
 
 func createDefaultAbilities(anomalyType string) []*domain.AnomalyAbility {

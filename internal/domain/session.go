@@ -33,6 +33,7 @@ type GameState struct {
 	NPCStates         map[string]*NPCState `json:"npc_states"`
 	ChaosPool         int                  `json:"chaos_pool"`
 	LooseEnds         int                  `json:"loose_ends"`
+	LocationOverloads map[string]int       `json:"location_overloads"` // 地点过载追踪
 	AnomalyStatus     string               `json:"anomaly_status"`
 	MissionOutcome    string               `json:"mission_outcome"`
 }
