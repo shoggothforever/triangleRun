@@ -14,6 +14,7 @@ type GameService interface {
 	CreateSession(agentID, scenarioID string) (*domain.GameSession, error)
 	GetSession(sessionID string) (*domain.GameSession, error)
 	SaveSession(session *domain.GameSession) error
+	RegisterSession(session *domain.GameSession) error
 	DeleteSession(sessionID string) error
 	ListSessions() ([]*domain.GameSession, error)
 
@@ -132,8 +133,28 @@ func (s *gameService) GetSession(sessionID string) (*domain.GameSession, error) 
 	return session, nil
 }
 
-// SaveSession 保存游戏会话（如果不存在则创建）
+// SaveSession 保存游戏会话（必须已存在）
 func (s *gameService) SaveSession(session *domain.GameSession) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if session == nil {
+		return domain.NewGameError(domain.ErrInvalidInput, "游戏会话不能为空")
+	}
+
+	// 检查会话是否存在
+	if _, exists := s.sessions[session.ID]; !exists {
+		return domain.NewGameError(domain.ErrNotFound, "游戏会话不存在")
+	}
+
+	session.UpdatedAt = time.Now()
+	s.sessions[session.ID] = session
+
+	return nil
+}
+
+// RegisterSession 注册一个新会话（用于加载存档）
+func (s *gameService) RegisterSession(session *domain.GameSession) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

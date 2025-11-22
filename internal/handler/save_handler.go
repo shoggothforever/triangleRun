@@ -147,7 +147,7 @@ func (h *SaveHandler) LoadSave(c *gin.Context) {
 	}
 
 	// 将加载的会话注册到游戏服务
-	if err := h.gameService.SaveSession(session); err != nil {
+	if err := h.gameService.RegisterSession(session); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "注册会话失败: " + err.Error(),
