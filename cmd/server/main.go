@@ -184,6 +184,17 @@ func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, dic
 	scenarioHandler := handler.NewScenarioHandler(scenarioService)
 	saveHandler := handler.NewSaveHandler(saveService, gameService)
 
+	// API文档路由
+	router.GET("/api/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/api/docs/")
+	})
+	router.GET("/api/docs/", func(c *gin.Context) {
+		c.File("api/swagger-ui.html")
+	})
+	router.GET("/api/docs/openapi.yaml", func(c *gin.Context) {
+		c.File("api/openapi.yaml")
+	})
+
 	// API路由组
 	api := router.Group("/api")
 	{

@@ -72,12 +72,39 @@ make docker-logs
 make docker-down
 ```
 
-## API端点
+## API文档
 
-- `GET /health` - 健康检查
-- `GET /api/version` - 版本信息
+完整的API文档已通过OpenAPI 3.0规范提供。
 
-更多API文档请访问 `/swagger` (开发中)
+### 访问文档
+
+启动服务器后，访问：
+
+```
+http://localhost:8080/api/docs
+```
+
+你将看到交互式的Swagger UI界面，可以：
+- 浏览所有API端点
+- 查看请求/响应示例
+- 直接在浏览器中测试API
+
+### 主要端点
+
+- **健康检查**: `GET /health`, `GET /api/version`
+- **角色管理**: `POST /api/agents`, `GET /api/agents`, `GET /api/agents/{id}`, `PUT /api/agents/{id}`, `DELETE /api/agents/{id}`
+- **游戏会话**: `POST /api/sessions`, `GET /api/sessions/{id}`, `POST /api/sessions/{id}/actions`, `POST /api/sessions/{id}/phase`
+- **骰子系统**: `POST /api/dice/roll`, `POST /api/dice/ability`, `POST /api/dice/request`
+- **剧本管理**: `GET /api/scenarios`, `GET /api/scenarios/{id}`, `GET /api/scenarios/{id}/scenes/{sceneId}`
+- **存档管理**: `POST /api/saves`, `GET /api/saves`, `GET /api/saves/{id}`, `POST /api/saves/{id}/load`, `DELETE /api/saves/{id}`
+
+### 文档资源
+
+- [API快速开始](api/QUICKSTART.md) - 快速上手指南
+- [API详细文档](api/README.md) - 完整API说明
+- [OpenAPI规范](api/openapi.yaml) - 原始规范文件
+- [Postman集合](api/postman-collection.json) - 导入到Postman测试
+- [API变更日志](api/CHANGELOG.md) - 版本变更记录
 
 ## 项目结构
 

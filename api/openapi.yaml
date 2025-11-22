@@ -1,0 +1,1690 @@
+openapi: 3.0.3
+info:
+  title: TRPG Solo Engine API
+  description: |
+    基于《三角机构》规则的单人TRPG游戏引擎后端API。
+    
+    本系统提供完整的游戏功能，包括：
+    - 角色创建和管理（ARC系统）
+    - 游戏会话管理
+    - 骰子判定系统（6d4）
+    - 剧本加载和场景导航
+    - 存档和读档功能
+    
+    ## 认证
+    当前版本暂未实现认证机制，所有API端点均可直接访问。
+    
+    ## 错误处理
+    所有API响应遵循统一格式：
+    ```json
+    {
+      "success": true/false,
+      "data": {...},      // 成功时返回
+      "error": "...",     // 失败时返回
+      "details": {...}    // 可选的详细信息
+    }
+    ```
+  version: 0.1.0
+  contact:
+    name: TRPG Solo Engine Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: 本地开发服务器
+  - url: http://localhost:8080/api
+    description: API基础路径
+
+tags:
+  - name: health
+    description: 健康检查和系统信息
+  - name: agents
+    description: 角色管理（外勤特工）
+  - name: sessions
+    description: 游戏会话管理
+  - name: dice
+    description: 骰子判定系统
+  - name: scenarios
+    description: 剧本和场景管理
+  - name: saves
+    description: 存档管理
+
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: 健康检查
+      description: 检查服务、数据库和Redis的运行状态
+      operationId: healthCheck
+      responses:
+        '200':
+          description: 服务运行正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: trpg-solo-engine
+                  database:
+                    type: string
+                    example: ok
+                  redis:
+                    type: string
+                    example: ok
+
+  /api/version:
+    get:
+      tags:
+        - health
+      summary: 获取API版本
+      description: 返回当前API版本信息
+      operationId: getVersion
+      responses:
+        '200':
+          description: 版本信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: "0.1.0"
+                  name:
+                    type: string
+                    example: "TRPG Solo Engine"
+
+
+  /api/agents:
+    get:
+      tags:
+        - agents
+      summary: 列出所有角色
+      description: 获取所有已创建的外勤特工角色列表
+      operationId: listAgents
+      responses:
+        '200':
+          description: 角色列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentListResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - agents
+      summary: 创建角色
+      description: |
+        创建一个新的外勤特工角色。需要指定ARC三要素：
+        - Anomaly（异常体类型）
+        - Reality（现实类型）
+        - Career（职能类型）
+      operationId: createAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+            examples:
+              example1:
+                summary: 创建一个低语者角色
+                value:
+                  name: "张三"
+                  pronouns: "他/him"
+                  anomaly_type: "whisper"
+                  reality_type: "caretaker"
+                  career_type: "pr"
+                  relationships:
+                    - name: "李四"
+                      description: "童年好友"
+                      connection: 4
+                      played_by: "GM"
+                    - name: "王五"
+                      description: "前同事"
+                      connection: 4
+                      played_by: "GM"
+                    - name: "赵六"
+                      description: "邻居"
+                      connection: 4
+                      played_by: "GM"
+      responses:
+        '201':
+          description: 角色创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '400':
+          description: 请求参数无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/agents/{id}:
+    get:
+      tags:
+        - agents
+      summary: 获取角色详情
+      description: 根据ID获取特定角色的完整信息
+      operationId: getAgent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 角色详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - agents
+      summary: 更新角色
+      description: 更新角色的可变属性（名称、代词、人际关系、资质保证、绩效等）
+      operationId: updateAgent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: 角色更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '400':
+          description: 请求参数无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - agents
+      summary: 删除角色
+      description: 永久删除指定的角色
+      operationId: deleteAgent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 角色删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "角色已删除"
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/sessions:
+    post:
+      tags:
+        - sessions
+      summary: 创建游戏会话
+      description: 为指定角色和剧本创建新的游戏会话
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - agent_id
+                - scenario_id
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+                  description: 角色ID
+                scenario_id:
+                  type: string
+                  description: 剧本ID
+              example:
+                agent_id: "123e4567-e89b-12d3-a456-426614174000"
+                scenario_id: "eternal-spring"
+      responses:
+        '201':
+          description: 会话创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: 请求参数无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 角色或剧本不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sessions/{id}:
+    get:
+      tags:
+        - sessions
+      summary: 获取游戏会话
+      description: 获取指定会话的完整状态
+      operationId: getSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 会话ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 会话详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: 会话不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/sessions/{id}/actions:
+    post:
+      tags:
+        - sessions
+      summary: 执行游戏行动
+      description: |
+        在游戏会话中执行各种行动，包括：
+        - move_to_scene: 移动到场景
+        - collect_clue: 收集线索
+        - unlock_location: 解锁地点
+        - add_chaos: 添加混沌
+        - update_npc_state: 更新NPC状态
+      operationId: executeAction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 会话ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+            examples:
+              moveToScene:
+                summary: 移动到场景
+                value:
+                  action_type: "move_to_scene"
+                  target: "scene_01"
+              collectClue:
+                summary: 收集线索
+                value:
+                  action_type: "collect_clue"
+                  target: "clue_fountain"
+              addChaos:
+                summary: 添加混沌
+                value:
+                  action_type: "add_chaos"
+                  parameters:
+                    amount: 3
+              updateNPC:
+                summary: 更新NPC状态
+                value:
+                  action_type: "update_npc_state"
+                  target: "npc_mayor"
+                  parameters:
+                    status: "suspicious"
+                    anomaly_affected: true
+                    relationship: -2
+      responses:
+        '200':
+          description: 行动执行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+        '400':
+          description: 请求参数无效或行动不可执行
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 会话不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 当前阶段不允许该行动
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/sessions/{id}/phase:
+    post:
+      tags:
+        - sessions
+      summary: 转换游戏阶段
+      description: |
+        转换游戏会话的当前阶段。有效阶段包括：
+        - morning: 晨会阶段
+        - investigation: 调查阶段
+        - encounter: 遭遇阶段
+        - aftermath: 余波阶段
+      operationId: transitionPhase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 会话ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phase
+              properties:
+                phase:
+                  type: string
+                  enum: [morning, investigation, encounter, aftermath]
+                  description: 目标阶段
+              example:
+                phase: "investigation"
+      responses:
+        '200':
+          description: 阶段转换成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      session_id:
+                        type: string
+                        format: uuid
+                      phase:
+                        type: string
+                        example: "investigation"
+                      message:
+                        type: string
+                        example: "阶段已转换为: investigation"
+        '400':
+          description: 请求参数无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 会话不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 阶段转换不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/dice/roll:
+    post:
+      tags:
+        - dice
+      summary: 基础掷骰
+      description: 执行基础的6d4掷骰，统计显示"3"的数量
+      operationId: rollDice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  default: 6
+                  description: 骰子数量（默认6）
+              example:
+                count: 6
+      responses:
+        '200':
+          description: 掷骰成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiceRollResponse'
+
+  /api/dice/ability:
+    post:
+      tags:
+        - dice
+      summary: 异常能力掷骰
+      description: 为使用异常能力执行掷骰，可选择花费资质保证调整结果
+      operationId: rollForAbility
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - agent_id
+                - ability_id
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+                  description: 角色ID
+                ability_id:
+                  type: string
+                  description: 异常能力ID
+                qa_spend:
+                  type: integer
+                  default: 0
+                  description: 花费的资质保证点数
+              example:
+                agent_id: "123e4567-e89b-12d3-a456-426614174000"
+                ability_id: "whisper_read_thoughts"
+                qa_spend: 2
+      responses:
+        '200':
+          description: 掷骰成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbilityRollResponse'
+        '400':
+          description: 请求参数无效或资质保证不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 角色或能力不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/dice/request:
+    post:
+      tags:
+        - dice
+      summary: 请求机构掷骰
+      description: 为请求机构（改变过去现实）执行掷骰
+      operationId: rollForRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - agent_id
+                - quality
+                - effect
+                - causal_chain
+              properties:
+                agent_id:
+                  type: string
+                  format: uuid
+                  description: 角色ID
+                quality:
+                  type: string
+                  enum: [focus, empathy, presence, deception, initiative, profession, vitality, grit, subtlety]
+                  description: 使用的资质
+                effect:
+                  type: string
+                  description: 期望的效果描述
+                causal_chain:
+                  type: string
+                  description: 因果链描述
+                qa_spend:
+                  type: integer
+                  default: 0
+                  description: 花费的资质保证点数
+              example:
+                agent_id: "123e4567-e89b-12d3-a456-426614174000"
+                quality: "subtlety"
+                effect: "我在进入房间前已经准备好了开锁工具"
+                causal_chain: "我一直有随身携带工具的习惯"
+                qa_spend: 1
+      responses:
+        '200':
+          description: 掷骰成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestRollResponse'
+        '400':
+          description: 请求参数无效或资质保证不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/scenarios:
+    get:
+      tags:
+        - scenarios
+      summary: 列出所有剧本
+      description: 获取所有可用剧本的摘要列表
+      operationId: listScenarios
+      responses:
+        '200':
+          description: 剧本列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScenarioSummary'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/scenarios/{id}:
+    get:
+      tags:
+        - scenarios
+      summary: 获取剧本详情
+      description: 获取指定剧本的完整信息
+      operationId: getScenario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 剧本ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 剧本详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Scenario'
+        '404':
+          description: 剧本不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 剧本数据损坏
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/scenarios/{id}/scenes/{sceneId}:
+    get:
+      tags:
+        - scenarios
+      summary: 获取场景详情
+      description: 获取剧本中特定场景的详细信息
+      operationId: getScene
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 剧本ID
+          schema:
+            type: string
+        - name: sceneId
+          in: path
+          required: true
+          description: 场景ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 场景详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Scene'
+        '400':
+          description: 请求参数无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 剧本或场景不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/saves:
+    get:
+      tags:
+        - saves
+      summary: 列出存档
+      description: 获取所有存档的列表，可选择按会话ID过滤
+      operationId: listSaves
+      parameters:
+        - name: session_id
+          in: query
+          required: false
+          description: 会话ID（可选，用于过滤）
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 存档列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SaveMetadata'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - saves
+      summary: 保存游戏
+      description: 为指定会话创建存档
+      operationId: createSave
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - session_id
+                - name
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                  description: 会话ID
+                name:
+                  type: string
+                  description: 存档名称
+              example:
+                session_id: "123e4567-e89b-12d3-a456-426614174000"
+                name: "调查阶段-喷泉前"
+      responses:
+        '201':
+          description: 存档创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SaveSnapshot'
+        '400':
+          description: 请求参数无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 会话不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/saves/{id}:
+    get:
+      tags:
+        - saves
+      summary: 获取存档详情
+      description: 获取指定存档的完整信息
+      operationId: getSave
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 存档ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 存档详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SaveSnapshot'
+        '404':
+          description: 存档不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - saves
+      summary: 删除存档
+      description: 永久删除指定的存档
+      operationId: deleteSave
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 存档ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 存档删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "存档已删除"
+        '404':
+          description: 存档不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/saves/{id}/load:
+    post:
+      tags:
+        - saves
+      summary: 加载存档
+      description: 从存档恢复游戏状态，创建新的会话
+      operationId: loadSave
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 存档ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 存档加载成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      session_id:
+                        type: string
+                        format: uuid
+                        description: 新创建的会话ID
+                      session:
+                        $ref: '#/components/schemas/GameSession'
+                      message:
+                        type: string
+                        example: "存档已加载"
+        '404':
+          description: 存档不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 存档数据损坏
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: 错误信息
+        details:
+          type: object
+          description: 可选的详细错误信息
+          additionalProperties: true
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        pronouns:
+          type: string
+        anomaly:
+          $ref: '#/components/schemas/Anomaly'
+        reality:
+          $ref: '#/components/schemas/Reality'
+        career:
+          $ref: '#/components/schemas/Career'
+        qa:
+          type: object
+          description: 资质保证点数
+          additionalProperties:
+            type: integer
+        relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relationship'
+        commendations:
+          type: integer
+          description: 嘉奖次数
+        reprimands:
+          type: integer
+          description: 申诫次数
+        rating:
+          type: string
+          description: 机构评级
+        alive:
+          type: boolean
+        in_debt:
+          type: boolean
+          description: 是否嘉奖负债
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Anomaly:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [whisper, catalog, drain, timepiece, growth, firearm, dream, manifold, absence]
+        abilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnomalyAbility'
+
+    AnomalyAbility:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        trigger:
+          type: string
+        roll:
+          type: object
+          properties:
+            quality:
+              type: string
+        on_success:
+          type: string
+        on_failure:
+          type: string
+
+    Reality:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [caretaker, overbooked, hunted, star, struggling, newborn, romantic, pillar, outsider]
+        special_feature:
+          type: object
+          additionalProperties: true
+        degradation_track:
+          $ref: '#/components/schemas/DegradationTrack'
+        relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relationship'
+
+    DegradationTrack:
+      type: object
+      properties:
+        name:
+          type: string
+        filled:
+          type: integer
+        total:
+          type: integer
+
+    Career:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [pr, rd, barista, ceo, intern, gravedigger, reception, hotline, clown]
+        qa:
+          type: object
+          description: 初始资质保证分配
+          additionalProperties:
+            type: integer
+        claimables:
+          type: array
+          items:
+            type: string
+
+    Relationship:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        connection:
+          type: integer
+          minimum: 0
+          maximum: 6
+        played_by:
+          type: string
+        notes:
+          type: array
+          items:
+            type: string
+
+
+    CreateAgentRequest:
+      type: object
+      required:
+        - name
+        - anomaly_type
+        - reality_type
+        - career_type
+        - relationships
+      properties:
+        name:
+          type: string
+          description: 角色名称
+        pronouns:
+          type: string
+          description: 代词（如：他/him, 她/her, 他们/they）
+        anomaly_type:
+          type: string
+          enum: [whisper, catalog, drain, timepiece, growth, firearm, dream, manifold, absence]
+          description: 异常体类型
+        reality_type:
+          type: string
+          enum: [caretaker, overbooked, hunted, star, struggling, newborn, romantic, pillar, outsider]
+          description: 现实类型
+        career_type:
+          type: string
+          enum: [pr, rd, barista, ceo, intern, gravedigger, reception, hotline, clown]
+          description: 职能类型
+        relationships:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: 三段人际关系，总连结点数为12
+          items:
+            type: object
+            required:
+              - name
+              - description
+              - connection
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              connection:
+                type: integer
+                minimum: 1
+                maximum: 6
+              played_by:
+                type: string
+                default: "GM"
+
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        pronouns:
+          type: string
+        relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relationship'
+        qa:
+          type: object
+          additionalProperties:
+            type: integer
+        commendations:
+          type: integer
+        reprimands:
+          type: integer
+
+    AgentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Agent'
+
+    AgentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+
+    GameSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        scenario_id:
+          type: string
+        phase:
+          type: string
+          enum: [morning, investigation, encounter, aftermath]
+        state:
+          $ref: '#/components/schemas/GameState'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GameState:
+      type: object
+      properties:
+        current_scene_id:
+          type: string
+        visited_scenes:
+          type: object
+          additionalProperties:
+            type: boolean
+        collected_clues:
+          type: array
+          items:
+            type: string
+        unlocked_locations:
+          type: array
+          items:
+            type: string
+        domain_unlocked:
+          type: boolean
+        npc_states:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NPCState'
+        chaos_pool:
+          type: integer
+        loose_ends:
+          type: integer
+        anomaly_status:
+          type: string
+        mission_outcome:
+          type: string
+
+    NPCState:
+      type: object
+      properties:
+        id:
+          type: string
+        current_state:
+          type: string
+        anomaly_affected:
+          type: boolean
+        relationship:
+          type: integer
+        custom_data:
+          type: object
+          additionalProperties: true
+
+    SessionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/GameSession'
+
+
+    ActionRequest:
+      type: object
+      required:
+        - action_type
+      properties:
+        action_type:
+          type: string
+          enum: [move_to_scene, collect_clue, unlock_location, add_chaos, update_npc_state]
+          description: 行动类型
+        target:
+          type: string
+          description: 目标ID（场景、线索、地点或NPC）
+        parameters:
+          type: object
+          description: 额外参数
+          additionalProperties: true
+
+    ActionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: 行动结果
+          additionalProperties: true
+
+    DiceResult:
+      type: object
+      properties:
+        dice:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 4
+          description: 骰子结果数组
+        threes:
+          type: integer
+          description: '"3"的数量'
+        success:
+          type: boolean
+          description: 是否成功
+        chaos:
+          type: integer
+          description: 产生的混沌点数
+        overload:
+          type: integer
+          description: 过载效果
+        triple_ascension:
+          type: boolean
+          description: 是否触发三重升华
+
+    DiceRollResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/DiceResult'
+
+    AbilityRollResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            roll:
+              $ref: '#/components/schemas/DiceResult'
+            ability:
+              $ref: '#/components/schemas/AnomalyAbility'
+            qa_spent:
+              type: integer
+            qa_remaining:
+              type: object
+              additionalProperties:
+                type: integer
+
+    RequestRollResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            roll:
+              $ref: '#/components/schemas/DiceResult'
+            quality:
+              type: string
+            effect:
+              type: string
+            causal_chain:
+              type: string
+            qa_spent:
+              type: integer
+            qa_remaining:
+              type: object
+              additionalProperties:
+                type: integer
+
+    Scenario:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        anomaly:
+          $ref: '#/components/schemas/AnomalyProfile'
+        scenes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Scene'
+        starting_scene_id:
+          type: string
+
+    ScenarioSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        anomaly_name:
+          type: string
+
+    AnomalyProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        history:
+          type: string
+        focus:
+          $ref: '#/components/schemas/Focus'
+        domain:
+          $ref: '#/components/schemas/Domain'
+        appearance:
+          type: string
+        impulse:
+          type: string
+        current_status:
+          type: string
+        chaos_effects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChaosEffect'
+
+    Focus:
+      type: object
+      properties:
+        emotion:
+          type: string
+        subject:
+          type: string
+
+    Domain:
+      type: object
+      properties:
+        location:
+          type: string
+        description:
+          type: string
+
+    ChaosEffect:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        cost:
+          type: integer
+        description:
+          type: string
+        effect:
+          type: string
+
+    Scene:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        objects:
+          type: array
+          items:
+            type: object
+        npcs:
+          type: array
+          items:
+            type: string
+        clues:
+          type: array
+          items:
+            type: string
+        exits:
+          type: array
+          items:
+            type: object
+            properties:
+              target:
+                type: string
+              description:
+                type: string
+
+
+    SaveSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        snapshot:
+          type: object
+          description: 完整的游戏状态快照
+          properties:
+            session:
+              $ref: '#/components/schemas/GameSession'
+            agent:
+              $ref: '#/components/schemas/Agent'
+        created_at:
+          type: string
+          format: date-time
+
+    SaveMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        agent_name:
+          type: string
+        scenario_name:
+          type: string
+        phase:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT认证（当前版本未启用）
+
+security: []

@@ -27,6 +27,7 @@ WORKDIR /root/
 COPY --from=builder /app/trpg-engine .
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /app/scenarios ./scenarios
+COPY --from=builder /app/api ./api
 
 # 暴露端口
 EXPOSE 8080

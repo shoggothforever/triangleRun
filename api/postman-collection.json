@@ -1,0 +1,451 @@
+{
+  "info": {
+    "name": "TRPG Solo Engine API",
+    "description": "基于《三角机构》规则的单人TRPG游戏引擎API集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "trpg-solo-engine"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "检查服务、数据库和Redis的运行状态"
+          }
+        },
+        {
+          "name": "Get Version",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/version",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "version"]
+            },
+            "description": "获取API版本信息"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agents",
+      "item": [
+        {
+          "name": "Create Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"张三\",\n  \"pronouns\": \"他/him\",\n  \"anomaly_type\": \"whisper\",\n  \"reality_type\": \"caretaker\",\n  \"career_type\": \"pr\",\n  \"relationships\": [\n    {\n      \"name\": \"李四\",\n      \"description\": \"童年好友\",\n      \"connection\": 4,\n      \"played_by\": \"GM\"\n    },\n    {\n      \"name\": \"王五\",\n      \"description\": \"前同事\",\n      \"connection\": 4,\n      \"played_by\": \"GM\"\n    },\n    {\n      \"name\": \"赵六\",\n      \"description\": \"邻居\",\n      \"connection\": 4,\n      \"played_by\": \"GM\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents"]
+            },
+            "description": "创建一个新的外勤特工角色"
+          }
+        },
+        {
+          "name": "List Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents"]
+            },
+            "description": "获取所有角色列表"
+          }
+        },
+        {
+          "name": "Get Agent",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agents/{{agentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents", "{{agentId}}"]
+            },
+            "description": "获取指定角色的详细信息"
+          }
+        },
+        {
+          "name": "Update Agent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"张三（更新）\",\n  \"commendations\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agents/{{agentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents", "{{agentId}}"]
+            },
+            "description": "更新角色信息"
+          }
+        },
+        {
+          "name": "Delete Agent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agents/{{agentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents", "{{agentId}}"]
+            },
+            "description": "删除指定角色"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": \"{{agentId}}\",\n  \"scenario_id\": \"eternal-spring\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"]
+            },
+            "description": "创建新的游戏会话"
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}"]
+            },
+            "description": "获取游戏会话详情"
+          }
+        },
+        {
+          "name": "Execute Action - Move to Scene",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"move_to_scene\",\n  \"target\": \"scene_01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/actions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "actions"]
+            },
+            "description": "移动到指定场景"
+          }
+        },
+        {
+          "name": "Execute Action - Collect Clue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"collect_clue\",\n  \"target\": \"clue_fountain\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/actions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "actions"]
+            },
+            "description": "收集线索"
+          }
+        },
+        {
+          "name": "Transition Phase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phase\": \"investigation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/phase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "phase"]
+            },
+            "description": "转换游戏阶段"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dice",
+      "item": [
+        {
+          "name": "Roll Dice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"count\": 6\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/dice/roll",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dice", "roll"]
+            },
+            "description": "执行基础掷骰"
+          }
+        },
+        {
+          "name": "Roll for Ability",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": \"{{agentId}}\",\n  \"ability_id\": \"whisper_read_thoughts\",\n  \"qa_spend\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/dice/ability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dice", "ability"]
+            },
+            "description": "为异常能力执行掷骰"
+          }
+        },
+        {
+          "name": "Roll for Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": \"{{agentId}}\",\n  \"quality\": \"subtlety\",\n  \"effect\": \"我在进入房间前已经准备好了开锁工具\",\n  \"causal_chain\": \"我一直有随身携带工具的习惯\",\n  \"qa_spend\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/dice/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dice", "request"]
+            },
+            "description": "为请求机构执行掷骰"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scenarios",
+      "item": [
+        {
+          "name": "List Scenarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios"]
+            },
+            "description": "获取所有可用剧本列表"
+          }
+        },
+        {
+          "name": "Get Scenario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/eternal-spring",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios", "eternal-spring"]
+            },
+            "description": "获取剧本详情"
+          }
+        },
+        {
+          "name": "Get Scene",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/eternal-spring/scenes/scene_01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios", "eternal-spring", "scenes", "scene_01"]
+            },
+            "description": "获取场景详情"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saves",
+      "item": [
+        {
+          "name": "Create Save",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{sessionId}}\",\n  \"name\": \"调查阶段-喷泉前\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/saves",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saves"]
+            },
+            "description": "保存游戏状态"
+          }
+        },
+        {
+          "name": "List Saves",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/saves",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saves"]
+            },
+            "description": "获取所有存档列表"
+          }
+        },
+        {
+          "name": "Get Save",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/saves/{{saveId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saves", "{{saveId}}"]
+            },
+            "description": "获取存档详情"
+          }
+        },
+        {
+          "name": "Load Save",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/saves/{{saveId}}/load",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saves", "{{saveId}}", "load"]
+            },
+            "description": "加载存档"
+          }
+        },
+        {
+          "name": "Delete Save",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/saves/{{saveId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saves", "{{saveId}}"]
+            },
+            "description": "删除存档"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "agentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "saveId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -13,7 +13,7 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_USER=trpg
       - DATABASE_PASSWORD=trpg_password
-      - DATABASE_NAME=trpg_solo_engine
+      - DATABASE_DBNAME=trpg_solo_engine
       - DATABASE_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -26,6 +26,7 @@ services:
     volumes:
       - ./configs:/root/configs
       - ./scenarios:/root/scenarios
+      - ./api:/root/api
     networks:
       - trpg-network
     restart: unless-stopped
