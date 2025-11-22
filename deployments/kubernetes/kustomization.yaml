@@ -1,0 +1,74 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: trpg-solo-engine
+
+# 资源列表
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - postgres-deployment.yaml
+  - redis-deployment.yaml
+  - backend-deployment.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# 通用标签
+commonLabels:
+  app.kubernetes.io/name: trpg-solo-engine
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# 通用注解
+commonAnnotations:
+  description: "三角机构TRPG单人引擎"
+  maintainer: "TRPG Team"
+
+# 镜像配置
+images:
+  - name: trpg-solo-engine
+    newName: your-registry/trpg-solo-engine
+    newTag: latest
+
+# ConfigMap生成器
+configMapGenerator:
+  - name: arc-configs
+    files:
+      - ../../configs/anomalies.json
+      - ../../configs/realities.json
+      - ../../configs/careers.json
+  
+  - name: scenario-data
+    files:
+      - ../../scenarios/eternal-spring.json
+  
+  - name: api-documentation
+    files:
+      - ../../api/openapi.yaml
+
+# Secret生成器（从文件）
+secretGenerator:
+  - name: trpg-tls-secret
+    type: kubernetes.io/tls
+    files:
+      - tls.crt=./certs/tls.crt
+      - tls.key=./certs/tls.key
+
+# 资源配置
+replicas:
+  - name: trpg-backend
+    count: 3
+
+# 补丁
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: trpg-backend
+    spec:
+      template:
+        metadata:
+          annotations:
+            deployment-timestamp: "TIMESTAMP_PLACEHOLDER"

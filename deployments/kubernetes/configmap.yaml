@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trpg-config
+  namespace: trpg-solo-engine
+  labels:
+    app: trpg-backend
+data:
+  # 服务器配置
+  SERVER_PORT: "8080"
+  SERVER_MODE: "release"
+  SERVER_READ_TIMEOUT: "30"
+  SERVER_WRITE_TIMEOUT: "30"
+  SERVER_IDLE_TIMEOUT: "120"
+  
+  # 数据库配置
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "trpg_solo_engine"
+  DATABASE_SSLMODE: "disable"
+  DATABASE_MAX_OPEN_CONNS: "25"
+  DATABASE_MAX_IDLE_CONNS: "5"
+  DATABASE_CONN_MAX_LIFETIME: "300"
+  DATABASE_AUTO_MIGRATE: "true"
+  
+  # Redis配置
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_POOL_SIZE: "10"
+  REDIS_MIN_IDLE_CONNS: "2"
+  
+  # AI服务配置
+  AI_PROVIDER: "openai"
+  AI_MODEL: "gpt-4"
+  AI_TIMEOUT: "30"
+  AI_MAX_TOKENS: "2000"
+  AI_TEMPERATURE: "0.7"
+  AI_ENABLE_CACHE: "true"
+  
+  # 认证配置
+  JWT_EXPIRATION: "86400"
+  JWT_REFRESH_EXPIRATION: "604800"
+  ENABLE_AUTH: "true"
+  
+  # 速率限制配置
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_GLOBAL_MAX_REQUESTS: "1000"
+  RATE_LIMIT_GLOBAL_WINDOW: "60"
+  
+  # 日志配置
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  LOG_OUTPUT: "stdout"
+  LOG_ENABLE_CALLER: "true"
+  
+  # 游戏配置
+  SCENARIOS_PATH: "scenarios"
+  ARC_CONFIGS_PATH: "configs"
+  SESSION_TIMEOUT: "86400"
+  AUTO_SAVE_INTERVAL: "300"
+  
+  # CORS配置
+  CORS_ENABLED: "true"
+  CORS_ALLOW_CREDENTIALS: "true"
+  
+  # 监控配置
+  MONITORING_ENABLED: "true"
+  PROMETHEUS_ENABLED: "true"
+  TRACING_ENABLED: "false"
+  
+  # Swagger配置
+  ENABLE_SWAGGER: "true"

@@ -504,7 +504,7 @@
   - 配置Swagger UI
   - _需求: 16.5_
 
-- [ ] 38. 创建部署配置
+- [x] 38. 创建部署配置
   - 完善Dockerfile
   - 创建docker-compose.yml
   - 创建Kubernetes部署配置

@@ -1,0 +1,147 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: trpg-solo-engine
+  labels:
+    app: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: trpg-solo-engine
+  labels:
+    app: postgres
+    component: database
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        component: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+          name: postgres
+          protocol: TCP
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_DB
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: trpg-solo-engine
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: trpg-solo-engine
+  labels:
+    app: postgres
+data:
+  init-db.sql: |
+    -- 初始化数据库脚本
+    -- 创建扩展
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+    -- 设置时区
+    SET timezone = 'UTC';
+    
+    -- 创建索引函数
+    CREATE OR REPLACE FUNCTION update_updated_at_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+    END;
+    $$ language 'plpgsql';

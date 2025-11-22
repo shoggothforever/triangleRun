@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trpg-solo-engine
+  labels:
+    name: trpg-solo-engine
+    environment: production

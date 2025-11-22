@@ -1,0 +1,78 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'trpg-solo-engine'
+    environment: 'production'
+
+# Alertmanager配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# 规则文件
+rule_files:
+  # - "alerts/*.yml"
+
+# 抓取配置
+scrape_configs:
+  # Prometheus自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # TRPG后端服务
+  - job_name: 'trpg-backend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['backend:8080']
+        labels:
+          service: 'trpg-backend'
+          component: 'api'
+    
+    # 服务发现（Kubernetes）
+    # kubernetes_sd_configs:
+    #   - role: pod
+    #     namespaces:
+    #       names:
+    #         - trpg-solo-engine
+    # relabel_configs:
+    #   - source_labels: [__meta_kubernetes_pod_label_app]
+    #     action: keep
+    #     regex: trpg-backend
+    #   - source_labels: [__meta_kubernetes_pod_name]
+    #     target_label: pod
+    #   - source_labels: [__meta_kubernetes_namespace]
+    #     target_label: namespace
+
+  # PostgreSQL Exporter
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgres'
+          component: 'database'
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          component: 'cache'
+
+  # Node Exporter（系统指标）
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          component: 'system'
+
+  # cAdvisor（容器指标）
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          component: 'containers'

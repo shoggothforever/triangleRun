@@ -1,0 +1,94 @@
+version: '3.8'
+
+# 生产环境Docker Compose配置
+# 使用方法: docker-compose -f docker-compose.yml -f deployments/docker-compose.prod.yml up -d
+
+services:
+  backend:
+    build:
+      args:
+        VERSION: ${VERSION:-1.0.0}
+        BUILD_TIME: ${BUILD_TIME}
+        GIT_COMMIT: ${GIT_COMMIT}
+    environment:
+      - SERVER_MODE=release
+      - LOG_LEVEL=warn
+      - ENABLE_AUTH=true
+      - ENABLE_SWAGGER=false
+      - MOCK_AI=false
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: pause
+        monitor: 60s
+        order: stop-first
+
+  postgres:
+    environment:
+      - POSTGRES_INITDB_ARGS=-E UTF8 --locale=C
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=2621kB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+      -c max_connections=100
+      -c log_statement=all
+      -c log_duration=on
+
+  redis:
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  nginx:
+    profiles: []  # 总是启用

@@ -1,0 +1,246 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trpg-backend
+  namespace: trpg-solo-engine
+  labels:
+    app: trpg-backend
+    component: api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: trpg-backend
+  template:
+    metadata:
+      labels:
+        app: trpg-backend
+        component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      # 使用非root用户运行
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      # 初始化容器 - 等待数据库就绪
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z postgres-service 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"
+      
+      - name: wait-for-redis
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z redis-service 6379; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+          echo "Redis is ready!"
+      
+      containers:
+      - name: trpg-backend
+        image: trpg-solo-engine:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        
+        # 环境变量 - 从ConfigMap
+        envFrom:
+        - configMapRef:
+            name: trpg-config
+        
+        # 环境变量 - 从Secret
+        env:
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: REDIS_PASSWORD
+        - name: AI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: AI_API_KEY
+        - name: AI_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: AI_BASE_URL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: JWT_SECRET
+        - name: CORS_ALLOW_ORIGINS
+          valueFrom:
+            secretKeyRef:
+              name: trpg-secrets
+              key: CORS_ALLOW_ORIGINS
+        
+        # 挂载配置文件
+        volumeMounts:
+        - name: configs
+          mountPath: /app/configs
+          readOnly: true
+        - name: scenarios
+          mountPath: /app/scenarios
+          readOnly: true
+        - name: api-docs
+          mountPath: /app/api
+          readOnly: true
+        - name: logs
+          mountPath: /app/logs
+        
+        # 资源限制
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # 健康检查
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        
+        # 启动探针
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+          successThreshold: 1
+        
+        # 安全上下文
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      
+      # 卷定义
+      volumes:
+      - name: configs
+        configMap:
+          name: arc-configs
+      - name: scenarios
+        configMap:
+          name: scenario-data
+      - name: api-docs
+        configMap:
+          name: api-documentation
+      - name: logs
+        emptyDir: {}
+      
+      # 节点亲和性（可选）
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - trpg-backend
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trpg-backend-service
+  namespace: trpg-solo-engine
+  labels:
+    app: trpg-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: trpg-backend
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trpg-backend-headless
+  namespace: trpg-solo-engine
+  labels:
+    app: trpg-backend
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: trpg-backend

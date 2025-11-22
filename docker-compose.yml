@@ -1,61 +1,153 @@
+version: '3.8'
+
 services:
+  # ============================================
   # 后端服务
+  # ============================================
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    container_name: trpg-backend
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:8080"
     environment:
+      # 服务器配置
       - SERVER_PORT=8080
-      - SERVER_MODE=release
+      - SERVER_MODE=${SERVER_MODE:-release}
+      - SERVER_READ_TIMEOUT=${SERVER_READ_TIMEOUT:-30}
+      - SERVER_WRITE_TIMEOUT=${SERVER_WRITE_TIMEOUT:-30}
+      
+      # 数据库配置
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USER=trpg
-      - DATABASE_PASSWORD=trpg_password
-      - DATABASE_DBNAME=trpg_solo_engine
+      - DATABASE_USER=${DATABASE_USER:-trpg}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-trpg_password}
+      - DATABASE_NAME=${DATABASE_NAME:-trpg_solo_engine}
       - DATABASE_SSLMODE=disable
+      - DATABASE_MAX_OPEN_CONNS=${DATABASE_MAX_OPEN_CONNS:-25}
+      - DATABASE_MAX_IDLE_CONNS=${DATABASE_MAX_IDLE_CONNS:-5}
+      - DATABASE_AUTO_MIGRATE=${DATABASE_AUTO_MIGRATE:-true}
+      
+      # Redis配置
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - LOG_LEVEL=info
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      
+      # AI服务配置
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_MODEL=${AI_MODEL:-gpt-4}
+      - AI_TIMEOUT=${AI_TIMEOUT:-30}
+      - MOCK_AI=${MOCK_AI:-false}
+      
+      # 认证配置
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - ENABLE_AUTH=${ENABLE_AUTH:-false}
+      
+      # 日志配置
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      
+      # 速率限制
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      
+      # CORS配置
+      - CORS_ENABLED=${CORS_ENABLED:-true}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000}
+      
+      # 监控配置
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-true}
+      - ENABLE_SWAGGER=${ENABLE_SWAGGER:-true}
+    
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    
     volumes:
-      - ./configs:/root/configs
-      - ./scenarios:/root/scenarios
-      - ./api:/root/api
+      - ./configs:/app/configs:ro
+      - ./scenarios:/app/scenarios:ro
+      - ./api:/app/api:ro
+      - app-logs:/app/logs
+    
     networks:
       - trpg-network
+    
     restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
+  # ============================================
   # PostgreSQL数据库
+  # ============================================
   postgres:
     image: postgres:15-alpine
+    container_name: trpg-postgres
     environment:
-      POSTGRES_USER: trpg
-      POSTGRES_PASSWORD: trpg_password
-      POSTGRES_DB: trpg_solo_engine
+      POSTGRES_USER: ${DATABASE_USER:-trpg}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-trpg_password}
+      POSTGRES_DB: ${DATABASE_NAME:-trpg_solo_engine}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - postgres-backups:/backups
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trpg"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-trpg} -d ${DATABASE_NAME:-trpg_solo_engine}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - trpg-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
+  # ============================================
   # Redis缓存
+  # ============================================
   redis:
     image: redis:7-alpine
+    container_name: trpg-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -63,13 +155,126 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
     networks:
       - trpg-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
+  # ============================================
+  # Nginx反向代理（可选）
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: trpg-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deployments/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployments/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - backend
+    networks:
+      - trpg-network
+    restart: unless-stopped
+    profiles:
+      - production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+  # ============================================
+  # Prometheus监控（可选）
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: trpg-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - trpg-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================
+  # Grafana可视化（可选）
+  # ============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: trpg-grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deployments/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deployments/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - trpg-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+# ============================================
+# 数据卷
+# ============================================
 volumes:
   postgres-data:
+    driver: local
+  postgres-backups:
+    driver: local
   redis-data:
+    driver: local
+  app-logs:
+    driver: local
+  nginx-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
 
+# ============================================
+# 网络
+# ============================================
 networks:
   trpg-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

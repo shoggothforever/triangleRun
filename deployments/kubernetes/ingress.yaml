@@ -1,0 +1,92 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trpg-ingress
+  namespace: trpg-solo-engine
+  labels:
+    app: trpg-backend
+  annotations:
+    # Nginx Ingress Controller配置
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # CORS配置
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    
+    # 速率限制
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    
+    # 超时配置
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    
+    # 请求体大小限制
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    
+    # SSL配置（使用cert-manager）
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # 其他配置
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "trpg-session"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.yourdomain.com
+    - www.yourdomain.com
+    secretName: trpg-tls-secret
+  rules:
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: trpg-backend-service
+            port:
+              number: 8080
+  - host: www.yourdomain.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: trpg-backend-service
+            port:
+              number: 8080
+
+---
+# HTTP到HTTPS重定向
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trpg-ingress-redirect
+  namespace: trpg-solo-engine
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: trpg-backend-service
+            port:
+              number: 8080
