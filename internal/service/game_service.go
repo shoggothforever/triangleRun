@@ -132,14 +132,13 @@ func (s *gameService) GetSession(sessionID string) (*domain.GameSession, error) 
 	return session, nil
 }
 
-// SaveSession 保存游戏会话
+// SaveSession 保存游戏会话（如果不存在则创建）
 func (s *gameService) SaveSession(session *domain.GameSession) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.sessions[session.ID]; !exists {
-		return domain.NewGameError(domain.ErrNotFound, "游戏会话不存在").
-			WithDetails("session_id", session.ID)
+	if session == nil {
+		return domain.NewGameError(domain.ErrInvalidInput, "游戏会话不能为空")
 	}
 
 	session.UpdatedAt = time.Now()

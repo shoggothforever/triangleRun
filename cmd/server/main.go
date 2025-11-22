@@ -18,6 +18,7 @@ import (
 	"github.com/trpg-solo-engine/backend/internal/domain"
 	"github.com/trpg-solo-engine/backend/internal/handler"
 	"github.com/trpg-solo-engine/backend/internal/infrastructure/database"
+	"github.com/trpg-solo-engine/backend/internal/service"
 )
 
 func main() {
@@ -53,9 +54,13 @@ func main() {
 
 	// 初始化服务
 	diceService := domain.NewDiceService()
+	agentService := service.NewAgentService()
+	gameService := service.NewGameService()
+	scenarioService := service.NewScenarioService("scenarios")
+	saveService := service.NewSaveService(gameService, agentService)
 
 	// 创建Gin路由
-	router := setupRouter(logger, db, redisClient, diceService)
+	router := setupRouter(logger, db, redisClient, diceService, agentService, gameService, scenarioService, saveService)
 
 	// 创建HTTP服务器
 	port := viper.GetString("server.port")
@@ -114,7 +119,7 @@ func loadConfig() error {
 	return nil
 }
 
-func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, diceService domain.DiceService) *gin.Engine {
+func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, diceService domain.DiceService, agentService service.AgentService, gameService service.GameService, scenarioService service.ScenarioService, saveService service.SaveService) *gin.Engine {
 	// 设置Gin模式
 	if viper.GetString("server.mode") == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -150,7 +155,11 @@ func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, dic
 	})
 
 	// 初始化处理器
-	diceHandler := handler.NewDiceHandler(diceService)
+	diceHandler := handler.NewDiceHandler(diceService, agentService)
+	agentHandler := handler.NewAgentHandler(agentService)
+	sessionHandler := handler.NewSessionHandler(gameService)
+	scenarioHandler := handler.NewScenarioHandler(scenarioService)
+	saveHandler := handler.NewSaveHandler(saveService, gameService)
 
 	// API路由组
 	api := router.Group("/api")
@@ -166,6 +175,45 @@ func setupRouter(logger *zap.Logger, db *gorm.DB, redisClient *redis.Client, dic
 		dice := api.Group("/dice")
 		{
 			dice.POST("/roll", diceHandler.RollDice)
+			dice.POST("/ability", diceHandler.RollForAbility)
+			dice.POST("/request", diceHandler.RollForRequest)
+		}
+
+		// 角色API
+		agents := api.Group("/agents")
+		{
+			agents.POST("", agentHandler.CreateAgent)
+			agents.GET("", agentHandler.ListAgents)
+			agents.GET("/:id", agentHandler.GetAgent)
+			agents.PUT("/:id", agentHandler.UpdateAgent)
+			agents.DELETE("/:id", agentHandler.DeleteAgent)
+		}
+
+		// 游戏会话API
+		sessions := api.Group("/sessions")
+		{
+			sessions.POST("", sessionHandler.CreateSession)
+			sessions.GET("/:id", sessionHandler.GetSession)
+			sessions.POST("/:id/actions", sessionHandler.ExecuteAction)
+			sessions.POST("/:id/phase", sessionHandler.TransitionPhase)
+		}
+
+		// 剧本API
+		scenarios := api.Group("/scenarios")
+		{
+			scenarios.GET("", scenarioHandler.ListScenarios)
+			scenarios.GET("/:id", scenarioHandler.GetScenario)
+			scenarios.GET("/:id/scenes/:sceneId", scenarioHandler.GetScene)
+		}
+
+		// 存档API
+		saves := api.Group("/saves")
+		{
+			saves.POST("", saveHandler.CreateSave)
+			saves.GET("", saveHandler.ListSaves)
+			saves.GET("/:id", saveHandler.GetSave)
+			saves.POST("/:id/load", saveHandler.LoadSave)
+			saves.DELETE("/:id", saveHandler.DeleteSave)
 		}
 	}
 
